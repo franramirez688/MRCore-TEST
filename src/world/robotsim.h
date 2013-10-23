@@ -37,7 +37,7 @@
 #include "simplejoint.h"
 #include "cylindricalpart.h"
 #include "tcp.h"
-
+#include "actuator.h"
 namespace mr
 {
 /*!
@@ -53,6 +53,13 @@ namespace mr
 	DESIGN INFO:
 	
 	*/
+
+enum PathType 
+		{
+			DEFAULT,
+			LINEAR,
+		};
+
 class RobotSim : public ComposedEntity 
 {
 	//DECLARE_MR_OBJECT(RobotSim)
@@ -65,8 +72,8 @@ public:
 	virtual void readFromXML(XMLElement* parent){}
 
 
-	//Constructor
-	RobotSim(void):tcp(0){}
+//Constructor
+	RobotSim(void):tcp(0),trajectory_type(TVP),frequency(100),path_type(LINEAR){}
 
 //Set and get i-joint value
 	virtual bool setJointValue(int i,double val) {if(i<(int)joints.size())joints[i]->setValue(val);else return false; return true;}
@@ -77,12 +84,13 @@ public:
 //retrieves the robot configuration. If are invalid qs returns false. Have to be redefined for each robot
 	virtual bool getConfigurationOf(const vector<double> & _q,unsigned char &conf){conf = 0x80;return true;} 
 	unsigned char getCurrentConfiguration();
+	unsigned char getCurrentConfiguration(vector<double> _q);
 	Transformation3D getTcpAbsLocation();
 	Transformation3D getTcpLocation();
 //Forward and inverse kinematics Relative. The inverse kinematics must be defined for each new class of robot 
 	virtual bool forwardKinematics(const vector<double> &_q, Transformation3D& t);
 //Inverse kinematics. abstract.
-	virtual bool inverseKinematics(Transformation3D t, vector<double> &_q, unsigned char conf=0x00)=0;
+	virtual bool inverseKinematics(Transformation3D t06, vector<double> &_q, unsigned char conf=NULL)=0;
 
 //Forward and inverse kinematics Absolute: generic methods. 
 	virtual bool forwardKinematicsAbs(vector<double> _q, Transformation3D& t);
@@ -96,7 +104,7 @@ public:
 	//Movements methods: generic but not safe
 	bool moveTo(double *_q);
 //Simulation of time 
-	virtual void simulate(double delta_t);//time interval in seconds
+	//virtual void simulate(double delta_t);//time interval in seconds
 //data interface
 	int getNumJoints(){return (int)joints.size();}
 	bool getJointLimits(int i, double &max, double &min){
@@ -104,15 +112,87 @@ public:
 		joints[i]->getMaxMin(max,min);
 		return true;
 	}
-	//returns a vector with a copy of the pointers included in joints
+//returns a vector with a copy of the pointers included in joints
 	vector<SimpleJoint *> getJoints(){return joints;}
-	//returns the address of the i-th joint 
+
+//returns the address of the i-th joint 
 	SimpleJoint *getJoint(int i){
 		if((i<0)||(i>=getNumJoints()))return 0; 
 		return joints[i];
 	}
 //Specific Collision checking
 	bool checkRobotColision();
+
+//cinematic simulation methods
+	bool checkActuatorsIsMoving(){
+		for(int i=0;i<(int)actuators.size();i++){
+			if(actuators[i]->isMoving())
+				return true;
+		}
+		return false;
+	}
+
+	virtual void goTo(vector<double> _q);
+	virtual void simulate(double delta_t);//time interval in seconds
+	void calculateTargetTime();
+
+	virtual void setFrequency (float _freq){frequency = _freq;}
+	virtual float getFrequency () {return frequency;}
+
+//Load T3D relative and absolute
+	virtual bool goTo(Transformation3D t);
+	virtual bool goToAbs(Transformation3D t);
+
+//Selection type of trajectory and movement
+	virtual bool setTrajectoryType (TrajectoryType _type){
+		if (checkActuatorsIsMoving()) return false;
+		for (int i=0;i<(int)actuators.size();i++){
+			actuators[i]->setTrajectoryType(_type);
+		}
+		trajectory_type=_type;
+		return true;
+	}	
+	
+	virtual TrajectoryType getTrajectoryType (){
+		trajectory_type=actuators[0]->getTrajectoryType();;	
+		for (int i=1;i<(int)actuators.size();i++){
+			if (trajectory_type!=actuators[i]->getTrajectoryType())
+				return ERRORMOVEMENT;		
+		}
+		return trajectory_type;
+	}
+
+	virtual bool setPathType (PathType _type){
+		if (checkActuatorsIsMoving()) return false;
+		path_type=_type;
+		return true;
+	}	
+
+//Methods to linear path movement
+	void linearPath (Transformation3D td3_final);
+	void updateTargetAndTagetTime(int index);
+	void viaPoint();
+
+//Spline trajetory (interpolation points)
+
+	 /* 
+	 
+	 Thomas Algorithm for Tridiagonal Matrix
+	
+
+			| b1 c1	0   .	0	|
+			| a2 b2 c2	.	.   |
+		M = | 0	 a3  .	.	0   |
+			| .	 .  .	.   cn-1|
+			| 0	 .	0   an	bn  |
+
+	*/
+
+	vector<double> TDMA (vector<double> a, vector<double> b, vector<double> c,vector<double> d, int nIterations);
+
+
+//Methods to draw graphs of position, velocity and acceleration of all joints
+	void dataToGraphs (int index_actuator, double _pos, double _veloc, double _accel);
 
 
 protected:
@@ -121,7 +201,34 @@ protected:
 	vector<SolidEntity *> links;
 	vector<SimpleJoint *> joints;
 	Tcp *tcp;
+	
+//cinematic simulation atributes
+	vector<Actuator*> actuators;
+	Actuator* actuator;
+	double time,targetTime;
 
+	unsigned char conf;
+	vector<double> q_init;
+	vector<double> q_target;
+	vector<Vector3D> vec_targets;
+	vector<double> coef;
+
+	TrajectoryType trajectory_type;
+	PathType path_type;
+	float frequency; // Hz 
+
+//Specific linear path
+	vector<Transformation3D> all_space_points;
+	vector<vector<double>> all_joints_value;
+	int index_pos;
+
+//detect vía points
+	bool changed_target;
+
+//atributtes specific TVP movement	
+	bool check_init_pos;
+	double ta;
+	vector<double> joint_initValue;
 };
 
 };//end namespace mr

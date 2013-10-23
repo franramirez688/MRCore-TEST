@@ -39,7 +39,6 @@
 
 
 using namespace std;
-
 namespace mr
 {
 /**
@@ -64,12 +63,6 @@ protected:
    double value;
    Axis axis;
    bool prismatic; //true if prismatic. By default is rotational
-   
-   //cinematic simulation atributes
-   double maxSpeed; // m/s rad/s
-   double speed;    //m/s rad/sec
-   double target;
-   bool targetActive; //true if target have to be reached
 
  
 
@@ -107,20 +100,9 @@ public:
 	}
 	bool isPrismatic(){return prismatic;}
 	void getMaxMin(double &_max, double &_min){_max=vmax; _min=vmin;}
+	
 
-	//simulation methods
-   void setSimulationParameters(double _maxSpeed, double _speed=0){if(_maxSpeed<0)return;
-	maxSpeed=_maxSpeed; if(_speed<=0)speed=_maxSpeed;speed=speed>maxSpeed?maxSpeed:speed;
-   }
-   double setSpeed(double sp){if(sp<0)return speed; speed=sp>maxSpeed?maxSpeed:sp;return speed;}
-   double getSpeed(){return speed;}
-   double getMaxSpeed(){return maxSpeed;}
-   bool setTarget(double val){if((val<vmin)||(val>vmax))return false;target=val;targetActive=true;
-	return true;
-   }
-   double getTarget(){return target;}
-   bool isMoving(){return targetActive;}
-   virtual void simulate(double delta_t);
+
 };
 
 };
