@@ -210,6 +210,7 @@ protected:
 	unsigned char conf;
 	vector<double> q_init;
 	vector<double> q_target;
+	vector<double> next_q_target;
 	vector<Vector3D> vec_targets;
 	vector<double> coef;
 

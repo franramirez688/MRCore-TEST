@@ -173,12 +173,17 @@ void RobotSim::simulate(double delta_t)
 			error+=fabs(q_target[i]-joints[i]->getValue());//*
 
 		if(time >= (targetTime*0.85)) //if reach the 85% target time, we change to via point movement
-		{
-			if (all_space_points.size())
-				
-				
+			if (path_type==LINEAR)
+			{
+				if ((index_pos+1) != (int)all_joints_value.size())
+					viaPoint();
 
-		}
+			}
+			else if (next_q_target.size())
+			{
+				viaPoint();
+
+			}
 		
 		if( (time+delta_t) >= targetTime)//*
 		{
@@ -364,7 +369,7 @@ void RobotSim::calculateTargetTime()
 {
 	/*
 		Following options are depending on type of trajectory and each one 
-		calculates the target time for the actuators which control the movement.
+		calculates the target time for the actuators which control the movement
 
 	*/
 
