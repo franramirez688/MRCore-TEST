@@ -172,18 +172,6 @@ void RobotSim::simulate(double delta_t)
 		for(int i=0;i<(int)joints.size();i++)
 			error+=fabs(q_target[i]-joints[i]->getValue());//*
 
-		if(time >= (targetTime*0.85)) //if reach the 85% target time, we change to via point movement
-			if (path_type==LINEAR)
-			{
-				if ((index_pos+1) != (int)all_joints_value.size())
-					viaPoint();
-
-			}
-			else if (next_q_target.size())
-			{
-				viaPoint();
-
-			}
 		
 		if( (time+delta_t) >= targetTime)//*
 		{
@@ -214,16 +202,57 @@ void RobotSim::simulate(double delta_t)
 				}
 			}				
 		}
+
+		//else if(time >= (targetTime*0.85)) //if reach the 85% target time, we change to via point movement
+		//	if (path_type==LINEAR)
+		//	{
+		//		if ((index_pos+1) != (int)all_joints_value.size())
+		//			viaPoint();
+
+		//	}
+		//	else if (next_q_target.size())
+		//	{
+		//		viaPoint();
+
+		//	}
 		else
 		{
-			if (changed_target)
-			//We activate vía point
-			{
-				/* Path to via point
-				   T = Tb - Ta
-				*/
+		//	if (changed_target)
+		//	//We activate via point
+		//	{
+		//		/* 
+		//			Via point ---> (A'-->C')
+		//				 
+		//				B
+		//				/\
+		//			   /  \
+		//			  A'---C'
+		//			 /      \
+		//			/        \
+		//		   /		  \
+		//		  A		       \				
+		//					    C
+		//
+		//		Math to calculate trajectory in via point
+		//		**********************************************************
+		//		* p(t) = A' + v1*Kab*t +t^2/(2*(Tc'-Ta'))*(v2*Kbc-v1*Kab)*
+		//		**********************************************************
+		//		
+		//		*/
 
-			}
+		//		double val=0.0;
+
+
+		//		all_space_points.clear();
+		//		all_joints_value.clear();
+		//		
+		//		Vector3D direct_vec = posFin - posIni; //direction vector
+		//		double total_path = direct_vec.module(); //distance L = total path
+		//		
+		//		if (total_path<EPS)
+		//			return;
+
+		//	}
 			/*************************************************************
 				IF TRAJECTORY SELECTED IS CUBIC POLINOMIAL TRAJECTORY TYPE 
 			**************************************************************/
@@ -258,7 +287,7 @@ void RobotSim::simulate(double delta_t)
 
 				if (check_init_pos) //we need the initial values of the joints
 				{
-					for (int i=0;i<actuators.size();i++)
+					for (int i=0;i<(int)actuators.size();i++)
 					{
 						joint_initValue.push_back(joints[i]->getValue());
 
@@ -266,7 +295,7 @@ void RobotSim::simulate(double delta_t)
 					check_init_pos=false;
 				}
 
-				for (int i=0;i<actuators.size();i++)
+				for (int i=0;i<(int)actuators.size();i++)
 				{
 					if ((q_target[i]-joint_initValue[i])<0)
 						signMovement=-1;//if we go to target in the negative cuadrant
@@ -557,10 +586,6 @@ void RobotSim::calculateTargetTime()
 
 }
 
-
-
-
-
 /*
 	Method to calculate to move the robot in a lineal path
 */
@@ -596,7 +621,7 @@ void RobotSim::linearPath (Transformation3D td3_final)
 		posIni.z+=direct_vec.z;
 		Transformation3D _t(posIni);
 		all_space_points.push_back(_t);
-	} // we already have all the intermediate positions to calculate
+	}// we already have all the intermediate positions in XYZ coordinates
 
 }
 
@@ -610,29 +635,29 @@ void RobotSim::viaPoint()
 
 		Data: q_init, q_via_point, q_final, t1, t2 and tau
 	*/
-	double tau = 0.1*targetTime;
-	double val = 0.00;
-	double p1 = 0.00;
+	//double tau = 0.1*targetTime;
+	//double val = 0.00;
+	//double p1 = 0.00;
 
-	//change the other target
-	if (trajectory_type==TVP)
-		for (int i=0;i<(int)actuators.size();i++)
-		{
-			//if (tInit<=time && time<=(t1-tau))
-			//	val = p1 - ((t1 - time)/t1)*L1;
+	////change the other target
+	//if (trajectory_type==TVP)
+	//	for (int i=0;i<(int)actuators.size();i++)
+	//	{
+	//		//if (tInit<=time && time<=(t1-tau))
+	//		//	val = p1 - ((t1 - time)/t1)*L1;
 
-			if ((t1-tau)<time && time<=(t1+tau))
-				val = p1 - (square(time - t1 - tau)/(4*tau*t1))*L1 + (square(time - t1 + tau)/(4*tau*t2))*L2;
+	//		if ((t1-tau)<time && time<=(t1+tau))
+	//			val = p1 - (square(time - t1 - tau)/(4*tau*t1))*L1 + (square(time - t1 + tau)/(4*tau*t2))*L2;
 
-			//else if ((t1+tau)<time && time<=(t1+t2))
-			//	val = p1 + ((time - t1)/t2)*L2;
+	//		//else if ((t1+tau)<time && time<=(t1+t2))
+	//		//	val = p1 + ((time - t1)/t2)*L2;
 
-		}
-	return val;
+	//	}
+	//return val;
 }
 
 /*
-	Different methods to calculate to move the joints or robot
+	Different methods to move the joints or robot
 */
 
 bool RobotSim::moveTo(double *_q)
