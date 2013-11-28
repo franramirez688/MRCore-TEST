@@ -259,6 +259,7 @@ void RobotSim::simulate(double delta_t)
 			if (trajectory_type==CPT)
 			{
 				double val=0,sp=0;
+				vector<double> coef;
 				for(int i=0;i<(int)actuators.size();i++)
 				{
 					coef=actuators[i]->getCoeficientsPolinomial();
@@ -339,6 +340,7 @@ void RobotSim::simulate(double delta_t)
 			else if (trajectory_type==SPLINE)
 			{
 				double strech=0.1,Tk=0.1,val=0;
+				vector<double> coef;
 				for(int i=0;i<(int)actuators.size();i++)
 				{
 					coef=actuators[i]->getCoeficientsPolinomial();

@@ -104,7 +104,7 @@ public:
 	//Movements methods: generic but not safe
 	bool moveTo(double *_q);
 //Simulation of time 
-	//virtual void simulate(double delta_t);//time interval in seconds
+	virtual void simulate(double delta_t);//time interval in seconds
 //data interface
 	int getNumJoints(){return (int)joints.size();}
 	bool getJointLimits(int i, double &max, double &min){
@@ -133,11 +133,11 @@ public:
 	}
 
 	virtual void goTo(vector<double> _q);
-	virtual void simulate(double delta_t);//time interval in seconds
+	//virtual void simulate(double delta_t);//time interval in seconds
 	void calculateTargetTime();
 
-	virtual void setFrequency (float _freq){frequency = _freq;}
-	virtual float getFrequency () {return frequency;}
+	void setControlFrequency (float _freq){frequency = _freq;}
+	float getControlFrequency () {return frequency;}
 
 //Load T3D relative and absolute
 	virtual bool goTo(Transformation3D t);
@@ -169,6 +169,7 @@ public:
 	}	
 
 //Methods to linear path movement
+protected:
 	void linearPath (Transformation3D td3_final);
 	void updateTargetAndTagetTime(int index);
 	void viaPoint();
@@ -197,39 +198,41 @@ public:
 
 protected:
 	
-//redundant information to easily access the kinematic chain
+//redundant information to easily access the kinematic chain and joint controllers
 	vector<SolidEntity *> links;
 	vector<SimpleJoint *> joints;
+	vector<Actuator*> actuators;
 	Tcp *tcp;
 	
 //cinematic simulation atributes
-	vector<Actuator*> actuators;
-	Actuator* actuator;
-	double time,targetTime;
+
+	//Actuator* actuator; poner en cada clase
+	double time; //time consumed since the beginning of the trajectory
+	double targetTime; //time to achieve the trajectory
 
 	unsigned char conf;
-	vector<double> q_init;
+	vector<double> q_init;// un poco absurdo revisarr
 	vector<double> q_target;
 	vector<double> next_q_target;
-	vector<Vector3D> vec_targets;
-	vector<double> coef;
+
+	//vector<double> coef; miguel ha dicho borrar
 
 	TrajectoryType trajectory_type;
 	PathType path_type;
-	float frequency; // Hz 
+	float controlFrequency; // Hz 
 
-//Specific linear path
-	vector<Transformation3D> all_space_points;
-	vector<vector<double>> all_joints_value;
+//Specific linear path trajectory
+	vector<Transformation3D> all_space_points;//sequence of linear path intermediate points (T3D)
+	vector<vector<double>> all_q_values;//sequence of linear path intermediate joints value
 	int index_pos;
 
 //detect vía points
-	bool changed_target;
+	bool via_point_flag;//changing target between trajectory segments
 
 //atributtes specific TVP movement	
-	bool check_init_pos;
-	double ta;
-	vector<double> joint_initValue;
+	bool check_init_pos;//
+	double ta;//TVP_time-acceleration
+	vector<double> joint_initValue; //¿se puede usar el q_init??????
 };
 
 };//end namespace mr
