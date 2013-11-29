@@ -52,7 +52,7 @@ Actuator::Actuator(double _speed,double _maxSpeed,double _acceleration, double _
 	a0=a1=a2=a3=0.0;	
 	frequency=1000;
 
-	TrajectoryTypeTVP="MaximumSpeedAcceleration";
+	InterpolatorTypeTVP="MaximumSpeedAcceleration";
 
 	index=0;
 	moveType=TVP;
@@ -196,16 +196,51 @@ void Actuator::setCubicPolinomialCoeficients(double path,double targetTime)
 }
 
 /******************************************************************
-	METHODS TO SET TYPE TRAJECTORY IN TRAPEZOIDAL VELOCITY PROFILE
+	METHODS TO SET INTERPOLATOR TRAPEZOIDAL VELOCITY PROFILE
 *******************************************************************/
 
-bool Actuator::setTrajectoryTypeTVP(string _type)
+void Actuator::simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
+									   double targetTime, double TVP_acceleration_time)
 {
-	TrajectoryTypeTVP=string();
+	double timeInit=0.00, timeFinal=0.00, val=0;
+	timeFinal = targetTime;
+
+    if(getInterpolatorTypeTVP()=="MaximumSpeedAcceleration")
+    {
+        //Acceleration phase
+        if (_time<(timeInit+TVP_acceleration_time) && _time>=timeInit)
+			val=qInit+signMovement*((getAcceleration()*0.5)*square(_time-timeInit));
+
+        //Velocity constant phase
+        if (_time>=(timeInit+TVP_acceleration_time) && _time<=(timeFinal-TVP_acceleration_time))
+			val=qInit+signMovement*(getSpeed()*(_time-timeInit-TVP_acceleration_time*0.5));
+
+        //Deceleration phase
+        if (_time>(timeFinal-TVP_acceleration_time) && _time<=timeFinal)
+			val=q_target-signMovement*((getAcceleration()*0.5)*square(timeFinal-_time));
+    }
+    else if(getInterpolatorTypeTVP()=="BangBang")
+    {
+        //Acceleration phase
+        if (_time<(timeFinal*0.5) && _time>=timeInit)
+			val=qInit+signMovement*((getMaxAcceleration()*0.5)*square(_time-timeInit));
+
+        //Deceleration phase
+        if (_time>=(timeFinal*0.5) && _time<=timeFinal)
+			val=q_target-signMovement*((getMaxAcceleration()*0.5)*square(timeFinal-_time));
+    }
+
+    setTarget(val);
+}
+
+
+bool Actuator::setInterpolatorTypeTVP(string _type)
+{
+	InterpolatorTypeTVP = string();
 
 	if(_type=="BangBang" || _type=="MaximumSpeedAcceleration")
 	{
-		TrajectoryTypeTVP=_type;
+		InterpolatorTypeTVP=_type;
 		return true;
 	}
 
@@ -213,7 +248,7 @@ bool Actuator::setTrajectoryTypeTVP(string _type)
 }
 
 /******************************************************************
-	METHOD TO SET VELOC. INTERMEDIATES IN SPLINE TRAJECTORY
+	METHOD TO SET VELOC. INTERMEDIATES IN SPLINE INTERPOLATOR
 *******************************************************************/
 void Actuator::setVelocIntermediates (vector<double> veloc)
 {

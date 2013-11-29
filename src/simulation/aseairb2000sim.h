@@ -93,6 +93,7 @@ Ranges coordiantes:
 
 private:
 	SimpleJoint *q_bar[3];
+	Actuator* actuator;
 
 };
 

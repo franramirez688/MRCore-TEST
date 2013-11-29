@@ -94,6 +94,7 @@ Ranges coordiantes:
 private:
 	CylindricalPart *light;
 	int f;//setFlash()
+	Actuator* actuator;
 };
 
 };//end namespace mr

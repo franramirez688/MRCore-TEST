@@ -45,12 +45,11 @@ namespace mr
 	class SimpleJoint;
 	
 	//types of movements
-	enum TrajectoryType 
+	enum InterpolatorType 
 	{
 		CPT,
 		TVP,
 		SPLINE,
-		ERRORMOVEMENT
 	};
 
 
@@ -64,31 +63,8 @@ class Actuator: public PositionableEntity
 	DECLARE_MR_OBJECT(Actuator)
 	//friend class World;
 
-protected:
-	SimpleJoint* s_Joint;
-
-	//kinematic simulation atributes
-	double speed, maxSpeed; // m/s rad/s
-	double acceleration, div_target, maxAcceleration; //rad/sec^2
-	
-	double target, targetIntermediate;
-	bool targetActive; //true if target have to be reached
-	string TrajectoryTypeTVP;
-	//spline algorithm
-	double a0,a1,a2,a3; //polinomial coeficients
-
-	int index;//index of velocities intermediates
-
-	vector<double> velocInter;
-	
-	TrajectoryType moveType;
-	float frequency; //Hz
-
-
 public:
 	
-
-
 //constructors
 
 //Basic Constructor
@@ -127,17 +103,41 @@ public:
 		coef.push_back(a3);
 		return coef;
 	}
+        
 //selection movement
-	void setTrajectoryType (TrajectoryType traj=CPT){moveType=traj;}
-	TrajectoryType getTrajectoryType (){return moveType;}
+	void setInterpolatorType (InterpolatorType traj=CPT){moveType=traj;}
+	InterpolatorType getInterpolatorType (){return moveType;}
 
 //specific methods trapezoidal Velocity Profile Trajectory (TVP)
-	bool setTrajectoryTypeTVP(string _type);
-	string getTrajectoryTypeTVP(){return TrajectoryTypeTVP;}
+	bool setInterpolatorTypeTVP(string _type);
+	string getInterpolatorTypeTVP(){return InterpolatorTypeTVP;}
+	void simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
+									double targetTime, double TVP_acceleration_time);
 
 //specific methods spline (interpolation points) and cubical trajetory 
 	void setCubicPolinomialCoeficients(double path,double targetTime);
 	void setVelocIntermediates (vector<double> veloc);
+
+//Attributes
+protected:
+	SimpleJoint* s_Joint;
+
+	//kinematic simulation atributes
+	double speed, maxSpeed; // m/s rad/s
+	double acceleration, div_target, maxAcceleration; //rad/sec^2
+	
+	double target, targetIntermediate;
+	bool targetActive; //true if target have to be reached
+	string InterpolatorTypeTVP;
+	//spline algorithm
+	double a0,a1,a2,a3; //polinomial coeficients
+
+	int index;//index of velocities intermediates
+
+	vector<double> velocInter;
+	
+	InterpolatorType moveType;
+	float frequency; //Hz
 
 };
 

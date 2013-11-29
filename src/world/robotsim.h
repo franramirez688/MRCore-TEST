@@ -56,7 +56,7 @@ namespace mr
 
 enum PathType 
 		{
-			DEFAULT,
+			SYNC_JOINT,
 			LINEAR,
 		};
 
@@ -73,7 +73,7 @@ public:
 
 
 //Constructor
-	RobotSim(void):tcp(0),trajectory_type(TVP),frequency(100),path_type(LINEAR){}
+	RobotSim(void):tcp(0),interpolator_type(TVP),controlFrequency(100),path_type(LINEAR){}
 
 //Set and get i-joint value
 	virtual bool setJointValue(int i,double val) {if(i<(int)joints.size())joints[i]->setValue(val);else return false; return true;}
@@ -124,7 +124,7 @@ public:
 	bool checkRobotColision();
 
 //cinematic simulation methods
-	bool checkActuatorsIsMoving(){
+	bool checkRobotIsMoving(){
 		for(int i=0;i<(int)actuators.size();i++){
 			if(actuators[i]->isMoving())
 				return true;
@@ -132,63 +132,46 @@ public:
 		return false;
 	}
 
-	virtual void goTo(vector<double> _q);
-	//virtual void simulate(double delta_t);//time interval in seconds
-	void calculateTargetTime();
+	virtual void computeTrajectoryTo(vector<double> _q);
+	void computeTargetTime();
 
-	void setControlFrequency (float _freq){frequency = _freq;}
-	float getControlFrequency () {return frequency;}
+	void setControlFrequency (float _freq){controlFrequency = _freq;}
+	float getControlFrequency () {return controlFrequency;}
 
 //Load T3D relative and absolute
-	virtual bool goTo(Transformation3D t);
-	virtual bool goToAbs(Transformation3D t);
+	virtual bool computeTrajectoryTo(Transformation3D t);
+	virtual bool computeTrajectoryToAbs(Transformation3D t);
 
 //Selection type of trajectory and movement
-	virtual bool setTrajectoryType (TrajectoryType _type){
-		if (checkActuatorsIsMoving()) return false;
+	virtual bool setInterpolatorType (InterpolatorType _type){
+		if (checkRobotIsMoving()) return false;
 		for (int i=0;i<(int)actuators.size();i++){
-			actuators[i]->setTrajectoryType(_type);
+			actuators[i]->setInterpolatorType(_type);
 		}
-		trajectory_type=_type;
+		interpolator_type=_type;
 		return true;
 	}	
 	
-	virtual TrajectoryType getTrajectoryType (){
-		trajectory_type=actuators[0]->getTrajectoryType();;	
-		for (int i=1;i<(int)actuators.size();i++){
-			if (trajectory_type!=actuators[i]->getTrajectoryType())
-				return ERRORMOVEMENT;		
-		}
-		return trajectory_type;
+	virtual InterpolatorType getInterpolatorType (){
+		return actuators[0]->getInterpolatorType();
 	}
 
 	virtual bool setPathType (PathType _type){
-		if (checkActuatorsIsMoving()) return false;
+		if (checkRobotIsMoving()) return false;
 		path_type=_type;
 		return true;
 	}	
 
-//Methods to linear path movement
-protected:
-	void linearPath (Transformation3D td3_final);
-	void updateTargetAndTagetTime(int index);
-	void viaPoint();
-
 //Spline trajetory (interpolation points)
-
 	 /* 
-	 
 	 Thomas Algorithm for Tridiagonal Matrix
 	
-
 			| b1 c1	0   .	0	|
 			| a2 b2 c2	.	.   |
 		M = | 0	 a3  .	.	0   |
 			| .	 .  .	.   cn-1|
 			| 0	 .	0   an	bn  |
-
 	*/
-
 	vector<double> TDMA (vector<double> a, vector<double> b, vector<double> c,vector<double> d, int nIterations);
 
 
@@ -198,6 +181,11 @@ protected:
 
 protected:
 	
+//Methods to linear path movement
+	void computeLinearPath (Transformation3D td3_final);
+	void updateTargetAndTagetTime(int index);
+	void computeViaPoint();
+
 //redundant information to easily access the kinematic chain and joint controllers
 	vector<SolidEntity *> links;
 	vector<SimpleJoint *> joints;
@@ -206,7 +194,6 @@ protected:
 	
 //cinematic simulation atributes
 
-	//Actuator* actuator; poner en cada clase
 	double time; //time consumed since the beginning of the trajectory
 	double targetTime; //time to achieve the trajectory
 
@@ -215,9 +202,7 @@ protected:
 	vector<double> q_target;
 	vector<double> next_q_target;
 
-	//vector<double> coef; miguel ha dicho borrar
-
-	TrajectoryType trajectory_type;
+	InterpolatorType interpolator_type;
 	PathType path_type;
 	float controlFrequency; // Hz 
 
@@ -230,9 +215,9 @@ protected:
 	bool via_point_flag;//changing target between trajectory segments
 
 //atributtes specific TVP movement	
-	bool check_init_pos;//
-	double ta;//TVP_time-acceleration
-	vector<double> joint_initValue; //¿se puede usar el q_init??????
+	bool check_q_init_value;//
+	double TVP_acceleration_time;//TVP_time_acceleration
+	vector<double> aux_q_init_value; //we need know the initial values
 };
 
 };//end namespace mr
