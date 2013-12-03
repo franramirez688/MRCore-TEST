@@ -205,7 +205,7 @@ void Face::readFromXML(XMLElement* parent)
 						cad.resize(c[i]->GetSize());
 						c[i]->GetValue((char*)cad.c_str());
 						vector<Vector3D> aux_vec=Vector3D::stringToVectorVector3D(cad);
-						for (int j=0;j<aux_vec.size();j++)
+						for (int j=0;j<(int)aux_vec.size();j++)
 						{
 							addVertex(aux_vec[j].x,aux_vec[j].y);
 						}

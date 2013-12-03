@@ -1,7 +1,7 @@
 /**********************************************************************
  *
  * This code is part of the MRcore project
- * Author:  -----------anyone
+ * Author:  Francisco Ramirez de Anton Montoro
  *
  * MRcore is licenced under the Common Creative License,
  * Attribution-NonCommercial-ShareAlike 3.0
@@ -76,7 +76,7 @@ string XMLAux::GetNameElement (XMLElement *elem)
 bool XMLAux::matrixTypeEuler (string cad)
 {
 	int beg=0,end=0;
-	for(int i=0;i<cad.size();i++) //checking the cad
+	for(int i=0;i<(int)cad.size();i++) //checking the cad
 	{	
 		if (cad[i]=='{')
 			beg++;

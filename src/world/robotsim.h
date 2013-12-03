@@ -1,7 +1,8 @@
 /**********************************************************************
  *
  * This code is part of the MRcore project
- * Author:  Rodrigo Azofra Barrio & Miguel Hernando Gutierrez
+ * Author:  Rodrigo Azofra Barrio & Miguel Hernando Gutierrez &
+ *			Francisco Ramirez de Anton Montoro
  * 
  *
  * MRcore is licenced under the Common Creative License,
@@ -123,7 +124,7 @@ public:
 //Specific Collision checking
 	bool checkRobotColision();
 
-//cinematic simulation methods
+//Kinematic simulation methods
 	bool checkRobotIsMoving(){
 		for(int i=0;i<(int)actuators.size();i++){
 			if(actuators[i]->isMoving())
@@ -133,7 +134,10 @@ public:
 	}
 
 	virtual void computeTrajectoryTo(vector<double> _q);
-	void computeTargetTime();
+	
+	void computeTargetTime();//general function to compute the target time depending on interpolator
+	void computeTargetTimePolinomial();//CPT and SPLINE
+	void computeTargetTimeTVP();//TVP
 
 	void setControlFrequency (float _freq){controlFrequency = _freq;}
 	float getControlFrequency () {return controlFrequency;}
@@ -142,7 +146,7 @@ public:
 	virtual bool computeTrajectoryTo(Transformation3D t);
 	virtual bool computeTrajectoryToAbs(Transformation3D t);
 
-//Selection type of trajectory and movement
+//Selection type of interpolator and movement
 	virtual bool setInterpolatorType (InterpolatorType _type){
 		if (checkRobotIsMoving()) return false;
 		for (int i=0;i<(int)actuators.size();i++){
@@ -182,7 +186,8 @@ public:
 protected:
 	
 //Methods to linear path movement
-	void computeLinearPath (Transformation3D td3_final);
+	bool computeLinearPath (Transformation3D td3d);
+	bool computeLinearPathAbs (Transformation3D td3d);
 	void updateTargetAndTagetTime(int index);
 	void computeViaPoint();
 
@@ -198,13 +203,13 @@ protected:
 	double targetTime; //time to achieve the trajectory
 
 	unsigned char conf;
-	vector<double> q_init;// un poco absurdo revisarr
+	vector<double> q_init;// initial joint values
 	vector<double> q_target;
 	vector<double> next_q_target;
 
-	InterpolatorType interpolator_type;
+	InterpolatorType interpolator_type; //TVP, CPT or SPLINE
 	PathType path_type;
-	float controlFrequency; // Hz 
+	float controlFrequency; //Hz 
 
 //Specific linear path trajectory
 	vector<Transformation3D> all_space_points;//sequence of linear path intermediate points (T3D)
@@ -215,7 +220,7 @@ protected:
 	bool via_point_flag;//changing target between trajectory segments
 
 //atributtes specific TVP movement	
-	bool check_q_init_value;//
+	bool check_q_init_value;//check if joints need to compute again which are their new initial values
 	double TVP_acceleration_time;//TVP_time_acceleration
 	vector<double> aux_q_init_value; //we need know the initial values
 };

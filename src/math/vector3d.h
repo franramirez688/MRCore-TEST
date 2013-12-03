@@ -2,7 +2,7 @@
  *
  * This code is part of the MRcore projec
  * Author:  Miguel Hernando, Diego Rodríguez-Losada, Paloma de la Puente,
- *   Alberto Valero, Pablo Sansegundo, Luis Pedraza.
+ *   Alberto Valero, Pablo Sansegundo, Luis Pedraza, Francisco Ramirez de Anton Montoro
  *
  * MRcore is licenced under the Common Creative License,
  * Attribution-NonCommercial-ShareAlike 3.0
@@ -121,11 +121,11 @@ public:
 	Vector3D getUnitaryVector() const;
 
 	
-///////////////////////////////////////////////////////////////////
-static	Vector3D stringToVector3D (string cad);
-static vector<Vector3D> stringToVectorVector3D (string cad);
-static string vector3DToString (Vector3D p);
-/////////////////////////////////////////////////////////////////
+//auxiliar methods to make XML serialization for Vector3D attributes
+	static Vector3D stringToVector3D (string cad);
+	static vector<Vector3D> stringToVectorVector3D (string cad);
+	static string vector3DToString (Vector3D p);
+
 
 	//Punto3D is a typedef of Vector3D
 	inline double distanceTo(const Vector3D& p) const { return ((*this) - p).module(); }

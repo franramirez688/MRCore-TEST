@@ -1,7 +1,7 @@
 /**********************************************************************
  *
  * This code is part of the MRcore project
- * Author:  Rodrigo Azofra Barrio & Miguel Hernando Gutierrez
+ * Author:  Francisco Ramirez de Anton Montoro
  * 
  *
  * MRcore is licenced under the Common Creative License,
@@ -92,31 +92,32 @@ public:
 	bool setTarget(double val);
 	double getTarget(){return target;}
 
-	virtual void setFrequency (float _freq){frequency = _freq;}
-	virtual float getFrequency () {return frequency;}
+	void setFrequency (float _freq){frequency = _freq;}
+	float getFrequency () {return frequency;}
 
-	vector<double> getCoeficientsPolinomial(){
-		vector<double> coef; 
-		coef.push_back(a0);
-		coef.push_back(a1);
-		coef.push_back(a2);
-		coef.push_back(a3);
-		return coef;
-	}
+	//vector<double> getCoeficientsPolinomial(){
+	//	vector<double> coef; 
+	//	coef.push_back(a0);
+	//	coef.push_back(a1);
+	//	coef.push_back(a2);
+	//	coef.push_back(a3);
+	//	return coef;
+	//}
         
 //selection movement
-	void setInterpolatorType (InterpolatorType traj=CPT){moveType=traj;}
-	InterpolatorType getInterpolatorType (){return moveType;}
+	void setInterpolatorType (InterpolatorType _type=CPT){interpolator_type=_type;}
+	InterpolatorType getInterpolatorType (){return interpolator_type;}
 
-//specific methods trapezoidal Velocity Profile Trajectory (TVP)
+//specific methods Trapezoidal Velocity Profile interpolator (TVP)
 	bool setInterpolatorTypeTVP(string _type);
 	string getInterpolatorTypeTVP(){return InterpolatorTypeTVP;}
 	void simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
 									double targetTime, double TVP_acceleration_time);
 
-//specific methods spline (interpolation points) and cubical trajetory 
-	void setCubicPolinomialCoeficients(double path,double targetTime);
-	void setVelocIntermediates (vector<double> veloc);
+//specific methods SPLINE and Cubical Polinomial Trajectory (CPT) interpolators 
+	void setCubicPolinomialCoeficients(double path,double targetTime);//used by both
+	void setVelocIntermediates (vector<double> veloc);//specific for SPLINE
+	void simulateInterpolatorPolinomial(double _time);//used by both
 
 //Attributes
 protected:
@@ -136,7 +137,7 @@ protected:
 
 	vector<double> velocInter;
 	
-	InterpolatorType moveType;
+	InterpolatorType interpolator_type;
 	float frequency; //Hz
 
 };

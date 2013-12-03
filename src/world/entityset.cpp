@@ -2,6 +2,7 @@
  *
  * This code is part of the MRcore project
  * Authors:  Rodrigo Azofra Barrio & Miguel Hernando Gutierrez
+ *			 Francisco Ramirez de Anton Montoro
  * 
  *
  * MRcore is licenced under the Common Creative License,

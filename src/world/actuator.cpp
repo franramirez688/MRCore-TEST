@@ -1,7 +1,7 @@
 /**********************************************************************
  *
  * This code is part of the MRcore project
- * Author:  Rodrigo Azofra Barrio &Miguel Hernando Gutierrez
+ * Author:  Francisco Ramirez de Anton Montoro
  * 
  *
  * MRcore is licenced under the Common Creative License,
@@ -55,7 +55,7 @@ Actuator::Actuator(double _speed,double _maxSpeed,double _acceleration, double _
 	InterpolatorTypeTVP="MaximumSpeedAcceleration";
 
 	index=0;
-	moveType=TVP;
+	interpolator_type=TVP;
 }
 
 
@@ -133,7 +133,7 @@ void Actuator::simulate(double delta_t)
 	
 	double value=s_Joint->getValue();
 	double d=target-value;	
-	if(moveType==CPT)
+	if(interpolator_type==CPT)
 	{	
 		double inc=delta_t*speed;
 		if(d<0)inc=((-inc<d)?d:(-inc));
@@ -145,7 +145,7 @@ void Actuator::simulate(double delta_t)
 		else s_Joint->setValue(value+inc);
 	}
 
-	else if(moveType==TVP || moveType==SPLINE)
+	else if(interpolator_type==TVP || interpolator_type==SPLINE)
 	{
 		if(fabs(d)<EPS)
 			targetActive=false;
@@ -169,18 +169,18 @@ void Actuator::linkTo (PositionableEntity *p)
 
 
 /******************************************************************************
-	METHODS TO CALCULATE POLINOMIAL COEF. OF CUBIC POLINOMIAL AND SPLINE TRAJ.
+	SPECIFIC METHODS CUBIC POLINOMIAL AND SPLINE INTERPOLATORS
 *******************************************************************************/
 void Actuator::setCubicPolinomialCoeficients(double path,double targetTime)
 {
-	if (moveType==CPT)
+	if (interpolator_type==CPT)
 	{
 		a0=s_Joint->getValue();//Current coordiantes
 		a1=0.0;
 		a2=( 3*(path)/(targetTime*targetTime));
 		a3=(-2*(path)/(targetTime*targetTime*targetTime));
 	}
-	else if (moveType==SPLINE)
+	else if (interpolator_type==SPLINE)
 	{
 		double stretch=path;
 		double Tk=targetTime;
@@ -194,9 +194,23 @@ void Actuator::setCubicPolinomialCoeficients(double path,double targetTime)
 		index++;
 	}
 }
+void Actuator::simulateInterpolatorPolinomial(double _time)
+{
+	double val=0.00,sp=0.00;
+
+	val=a0 + a1*_time + a2*square(_time) + a3*square(_time)*_time;
+
+	if (interpolator_type == CPT)
+	{
+		sp=a1+ 2*a2*_time + 3*a3*square(_time);
+		setSpeed(sp);
+	}
+
+	setTarget(val);
+}
 
 /******************************************************************
-	METHODS TO SET INTERPOLATOR TRAPEZOIDAL VELOCITY PROFILE
+	SPECIFIC METHODS INTERPOLATOR TRAPEZOIDAL VELOCITY PROFILE
 *******************************************************************/
 
 void Actuator::simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
@@ -255,7 +269,8 @@ void Actuator::setVelocIntermediates (vector<double> veloc)
 	double auxsp;
 	for(int i=0;i<(int)veloc.size();i++)
 	{
-		if(veloc[i]<0)auxsp=0.0;
+		if(veloc[i]<0)
+			auxsp=0.0;
 		else
 			auxsp=veloc[i]>maxSpeed?maxSpeed:veloc[i];
 		velocInter.push_back(auxsp);

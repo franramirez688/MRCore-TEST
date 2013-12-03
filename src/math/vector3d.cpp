@@ -1,7 +1,8 @@
 /**********************************************************************
  *
  * This code is part of the MRcore project
- * Author:  Miguel Hernando & Diego Rodríguez-Losada & Alberto Valero
+ * Author:  Miguel Hernando & Diego Rodríguez-Losada & Alberto Valero &
+ *			Francisco Ramirez de Anton Montoro
  *
  * MRcore is licenced under the Common Creative License,
  * Attribution-NonCommercial-ShareAlike 3.0
@@ -58,7 +59,7 @@ Vector3D Vector3D::getUnitaryVector() const
 	return ret.normalize();
 }
 
-//////////////////////////////////////////////////////////
+
 Vector3D Vector3D::stringToVector3D (string cad)
 {
 	Vector3D p(0.00);
@@ -71,7 +72,7 @@ Vector3D Vector3D::stringToVector3D (string cad)
 		return p;
 
 	int beg=0,end=0,com=0;
-	for(int i=0;i<cad.size();i++) //check the cad is correct
+	for(int i=0;i<(int)cad.size();i++) //check the cad is correct
 	{	
 		if (cad[i]=='{')
 			beg++;
@@ -87,7 +88,7 @@ Vector3D Vector3D::stringToVector3D (string cad)
 	aux.resize(cad.size());
 	int j=0,coma=0;
 
-	for(int i=0;i<cad.size();i++)
+	for(int i=0;i<(int)cad.size();i++)
 	{	
 		if (cad[i]=='{')
 			continue;
@@ -139,7 +140,7 @@ vector<Vector3D>  Vector3D::stringToVectorVector3D (string cad)//, string type_i
 	int beg=0,end=0,count=0,ind=0;
 	//vector<string> s;
 	vector<int> size;
-	for (int i=0;i<cad.size();i++)
+	for (int i=0;i<(int)cad.size();i++)
 	{
 		if (cad[i]=='{')
 		{
@@ -169,7 +170,7 @@ vector<Vector3D>  Vector3D::stringToVectorVector3D (string cad)//, string type_i
 	int j=0,copy=0;
 	ind=0;
 
-	for (int i=0;i<cad.size();i++)
+	for (int i=0;i<(int)cad.size();i++)
 	{
 		if (cad[i]=='{')
 		{
@@ -208,6 +209,5 @@ string Vector3D::vector3DToString (Vector3D p)
 	return cad;
 }
 
-///////////////////////////////////////////////////////////
 
 } //mr

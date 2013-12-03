@@ -1,7 +1,7 @@
 /**********************************************************************
  *
  * This code is part of the MRcore projec
- * Author:  -----------anyone
+ * Author:  Francisco Ramirez de Anton Montoro
  *
  * MRcore is licenced under the Common Creative License,
  * Attribution-NonCommercial-ShareAlike 3.0
