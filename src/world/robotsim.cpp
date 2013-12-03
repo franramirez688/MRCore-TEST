@@ -513,7 +513,7 @@ void RobotSim::computeTargetTimeTVP()
 
 
 /*
-	Method to calculate to move the robot in a lineal path
+	Method to calculate the linear path for any space point
 */
 bool RobotSim::computeLinearPath (Transformation3D td3d)
 {	
@@ -536,13 +536,13 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 	double total_orientation_path = variation_angles.module(); 
 
 
-	double angular_speed_to_achieve = 5.00; //velocity which will be imposed to all actuators
+	double angular_speed_to_achieve = 5.00; //angular velocity which will be imposed to all actuators
 	double target_orient_max_time = total_orientation_path / angular_speed_to_achieve;
 
 	double divisions = target_orient_max_time * controlFrequency;
-	int div = (int)divisions;
-	if (div == 0)div=1;
-	variation_angles=variation_angles/div;
+	int div_orient = (int)divisions;
+	if (div_orient == 0)div_orient=1;
+	variation_angles=variation_angles/div_orient;
 
 	/*
 		Calculating the vector of intermediate positions
@@ -562,20 +562,27 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 	double target_max_time = total_path / speed_to_achieve;
 	
 	divisions = target_max_time * controlFrequency;
-	div = (int)divisions;
-	if (div == 0)div=1;
-	direct_vec=direct_vec/div;
+	int div_pos = (int)divisions;
+	if (div_pos == 0)div_pos=1;
+	direct_vec=direct_vec/div_pos;
 	
-	for (int i=0;i<div;i++)
+	for (int i=0,j=0;i<div_pos,j<div_orient;i++,j++)
 	{
+		//position
 		posIni.x+=direct_vec.x;
 		posIni.y+=direct_vec.y;
 		posIni.z+=direct_vec.z;
 
-		Transformation3D td3_final(posIni.x, posIni.y, posIni.z);
-		all_space_points.push_back(td3_final);
-	}// we already have all the intermediate positions in XYZ coordinates
+		//orientation
+		orientIni.x+=variation_angles.x;
+		orientIni.y+=variation_angles.y;
+		orientIni.z+=variation_angles.z;
 
+		Transformation3D td3_final(posIni.x, posIni.y, posIni.z,
+								   orientIni.x, orientIni.y, orientIni.z);
+		all_space_points.push_back(td3_final);
+
+	}// we already have all the intermediate positions and orientations (X,Y,Z,ROLL,PITCH,YAW)
 	return true;
 
 }
@@ -589,6 +596,10 @@ bool RobotSim::computeLinearPathAbs (Transformation3D td3d)
 	return computeLinearPath(t_p);
 }
 
+
+/*
+	Method to calculate the via point in a trajectory with two different targets
+*/
 void RobotSim::computeViaPoint()
 {
 	/*
