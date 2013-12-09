@@ -63,6 +63,7 @@ AseaIRB2000Sim::AseaIRB2000Sim()
 	for(int i=0;i<6;i++)q_init.push_back(0.15 + i*0.1);
 
 	vector<Vector2D> list;
+	Actuator* actuator;
 
 //Base = link[0]
 	ComposedEntity *link=new ComposedEntity;
@@ -599,7 +600,7 @@ AseaIRB2000Sim::AseaIRB2000Sim()
 	tcp->LinkTo(joints[5]);
 	tcp->setDrawReferenceSystem(true);
 
-	getConfigurationOf(q_init,conf);
+//	getConfigurationOf(q_init,conf);
 	
 	(*this)+=links[0];
 

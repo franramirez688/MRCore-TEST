@@ -73,9 +73,6 @@ protected:
 //Specific inverse methode of SCARA_ADEPT_ONE
 	bool ADEPTONEinverseKinematics(double yaw,Vector3D p,vector<double> &_q,unsigned char conf=0);
 
-private:
-	Actuator* actuator;
-
 };
 
 };//end namespace mr

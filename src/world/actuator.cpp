@@ -54,7 +54,7 @@ Actuator::Actuator(double _speed,double _maxSpeed,double _acceleration, double _
 
 	InterpolatorTypeTVP="MaximumSpeedAcceleration";
 
-	index=0;
+	index_veloc_intermediates=0;
 	interpolator_type=TVP;
 }
 
@@ -171,27 +171,27 @@ void Actuator::linkTo (PositionableEntity *p)
 /******************************************************************************
 	SPECIFIC METHODS CUBIC POLINOMIAL AND SPLINE INTERPOLATORS
 *******************************************************************************/
-void Actuator::setCubicPolinomialCoeficients(double path,double targetTime)
+void Actuator::computeCubicPolinomialCoeficients(double path_joint,double targetTime)
 {
 	if (interpolator_type==CPT)
 	{
 		a0=s_Joint->getValue();//Current coordiantes
 		a1=0.0;
-		a2=( 3*(path)/(targetTime*targetTime));
-		a3=(-2*(path)/(targetTime*targetTime*targetTime));
+		a2=( 3*(path_joint)/(targetTime*targetTime));
+		a3=(-2*(path_joint)/(targetTime*targetTime*targetTime));
 	}
 	else if (interpolator_type==SPLINE)
 	{
-		double stretch=path;
+		double stretch=path_joint;
 		double Tk=targetTime;
 
-		if(index>=(int)velocInter.size())return;
+		if(index_veloc_intermediates>=(int)velocInter.size())return;
 		a0=s_Joint->getValue();//Current coordiantes
-		a1=velocInter[index];
-		a2=( 1/Tk)*((3*(stretch)/(Tk))-2*velocInter[index]-velocInter[index+1]);
-		a3=(1/(Tk*Tk))*(((-2*(stretch))/Tk)+velocInter[index]+velocInter[index+1]);
+		a1=velocInter[index_veloc_intermediates];
+		a2=( 1/Tk)*((3*(stretch)/(Tk))-2*velocInter[index_veloc_intermediates]-velocInter[index_veloc_intermediates+1]);
+		a3=(1/(Tk*Tk))*(((-2*(stretch))/Tk)+velocInter[index_veloc_intermediates]+velocInter[index_veloc_intermediates+1]);
 
-		index++;
+		index_veloc_intermediates++;
 	}
 }
 void Actuator::simulateInterpolatorPolinomial(double _time)
@@ -247,6 +247,60 @@ void Actuator::simulateInterpolatorTVP(double qInit,double q_target,int signMove
     setTarget(val);
 }
 
+void Actuator::loadAttributesTVP(int _signMovement)//double _q_init,double _q_target, int signMovement, double _TVP_acceleration_time, double targetTime)
+{
+	signMovement = _signMovement;
+	//q_init = _q_init;
+	//q_target = _q_target;	
+	//initial_time = 0.00;
+	//target_time = targetTime;
+	//sign_movement = signMovement;
+	//TVP_acceleration_time = _TVP_acceleration_time;
+}
+
+//void Actuator::simulateInterpolatorTVP(double _time)
+//{
+//	double val=0.00;
+//
+//    if(getInterpolatorTypeTVP()=="MaximumSpeedAcceleration")
+//    {
+//        //Acceleration phase
+//        if (_time<(initial_time+TVP_acceleration_time) && _time>=initial_time)
+//			val=q_init+sign_movement*((getAcceleration()*0.5)*square(_time-initial_time));
+//
+//        //Velocity constant phase
+//        if (_time>=(initial_time+TVP_acceleration_time) && _time<=(target_time-TVP_acceleration_time))
+//			val=q_init+sign_movement*(getSpeed()*(_time-initial_time-TVP_acceleration_time*0.5));
+//
+//        //Deceleration phase
+//        if (_time>(target_time-TVP_acceleration_time) && _time<=target_time)
+//			val=q_target-sign_movement*((getAcceleration()*0.5)*square(target_time-_time));
+//    }
+//    else if(getInterpolatorTypeTVP()=="BangBang")
+//    {
+//        //Acceleration phase
+//        if (_time<(target_time*0.5) && _time>=initial_time)
+//			val=q_init+sign_movement*((getMaxAcceleration()*0.5)*square(_time-initial_time));
+//
+//        //Deceleration phase
+//        if (_time>=(target_time*0.5) && _time<=target_time)
+//			val=q_target-sign_movement*((getMaxAcceleration()*0.5)*square(target_time-_time));
+//    }
+//
+//    setTarget(val);
+//
+//}
+//
+//void Actuator::loadAttributesTVP(double _q_init,double _q_target, int signMovement, double _TVP_acceleration_time, double targetTime)
+//{
+//	q_init = _q_init;
+//	q_target = _q_target;	
+//	initial_time = 0.00;
+//	target_time = targetTime;
+//	sign_movement = signMovement;
+//	TVP_acceleration_time = _TVP_acceleration_time;
+//}
+
 
 bool Actuator::setInterpolatorTypeTVP(string _type)
 {
@@ -264,7 +318,7 @@ bool Actuator::setInterpolatorTypeTVP(string _type)
 /******************************************************************
 	METHOD TO SET VELOC. INTERMEDIATES IN SPLINE INTERPOLATOR
 *******************************************************************/
-void Actuator::setVelocIntermediates (vector<double> veloc)
+void Actuator::computeVelocIntermediates (vector<double> veloc)
 {
 	double auxsp;
 	for(int i=0;i<(int)veloc.size();i++)

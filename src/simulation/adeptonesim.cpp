@@ -62,6 +62,8 @@ Codo izquierdo -> elbow = -1;
 
 //Base =links[0]
 	vector<Vector2D> list;
+	Actuator* actuator;
+
 
 	ComposedEntity *link=new ComposedEntity;
 	link->setName("Base");

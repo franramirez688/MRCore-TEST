@@ -67,6 +67,7 @@ Puma560Sim::Puma560Sim()
 	f=0;//setFlash()
 
 	vector<Vector2D> list;
+	Actuator* actuator;
 
 //Base = link[0]
 	ComposedEntity *link=new ComposedEntity;
@@ -366,7 +367,7 @@ podria dejar asi, pero no tiene mucho sentido la composicion de un unico objeto.
 	tcp->LinkTo(joints[5]);
 	tcp->setDrawReferenceSystem(true);
 
-	getConfigurationOf(q_init,conf);
+//	getConfigurationOf(q_init,conf);
 
 
 

@@ -157,7 +157,7 @@ public:
 	}	
 	
 	virtual InterpolatorType getInterpolatorType (){
-		return actuators[0]->getInterpolatorType();
+		return interpolator_type;
 	}
 
 	virtual bool setPathType (PathType _type){
@@ -180,7 +180,9 @@ public:
 
 
 //Methods to draw graphs of position, velocity and acceleration of all joints
-	void dataToGraphs (int index_actuator, double _pos, double _veloc, double _accel);
+	vector<double> getDataGraphPosition ();
+	vector<double> getDataGraphVelocity ();
+	vector<double> getDataGraphAcceleration();
 
 
 protected:
@@ -202,7 +204,6 @@ protected:
 	double time; //time consumed since the beginning of the trajectory
 	double targetTime; //time to achieve the trajectory
 
-	unsigned char conf;
 	vector<double> q_init;// initial joint values
 	vector<double> q_target;
 	vector<double> next_q_target;
@@ -219,10 +220,11 @@ protected:
 //detect vía points
 	bool via_point_flag;//changing target between trajectory segments
 
-//atributtes specific TVP movement	
+	//atributtes specific TVP movement	
 	bool check_q_init_value;//check if joints need to compute again which are their new initial values
 	double TVP_acceleration_time;//TVP_time_acceleration
 	vector<double> aux_q_init_value; //we need know the initial values
+
 };
 
 };//end namespace mr

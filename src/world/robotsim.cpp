@@ -157,139 +157,133 @@ Transformation3D RobotSim::getTcpLocation()
 
 void RobotSim::simulate(double delta_t)
 {
-	if((int)q_target.size()!=(int)actuators.size())return;
-	if((int)joints.size()!=(int)actuators.size())return;
-
-	double error=0;
-	for(int i=0;i<(int)joints.size();i++)
-		error+=fabs(q_target[i]-joints[i]->getValue());//*
-
-	if( (time+delta_t) >= targetTime)//*
+	if((int)q_target.size()==(int)joints.size())
 	{
+
+		double error=0;
 		for(int i=0;i<(int)joints.size();i++)
-			actuators[i]->setTarget(q_target[i]);
+			error+=fabs(q_target[i]-joints[i]->getValue());//*
 
-		q_target.clear();
-		time=0.0;
-		targetTime=0.0;
-		
-		check_q_init_value=true; // TVP
-		aux_q_init_value.clear(); // TVP
-		
-		via_point_flag=false; //end of vía point
-
-		if (path_type==LINEAR)
+		if( (time+delta_t) >= targetTime)//*
 		{
-			if ((index_pos+1) != (int)all_q_values.size())
+			for(int i=0;i<(int)joints.size();i++)
+				actuators[i]->setTarget(q_target[i]);
+
+			q_target.clear();
+			time=0.0;
+			targetTime=0.0;
+			
+			via_point_flag=false; //end of vía point
+
+			if (path_type==LINEAR)
 			{
-				index_pos++;
-				updateTargetAndTagetTime(index_pos);
-			}
-			else
-			{
-				all_q_values.clear();
-				all_space_points.clear();
-				return;
-			}
-		}				
-	}
-
-	//else if(time >= (targetTime*0.85)) //if reach the 85% target time, we change to via point movement
-	//	if (path_type==LINEAR)
-	//	{
-	//		if ((index_pos+1) != (int)all_q_values.size())
-	//			computeViaPoint();
-
-	//	}
-	//	else if (next_q_target.size())
-	//	{
-	//		computeViaPoint();
-
-	//	}
-	else
-	{
-	//	if (via_point_flag)
-	//	//We activate via point
-	//	{
-	//		/* 
-	//			Via point ---> (A'-->C')
-	//				 
-	//				B
-	//				/\
-	//			   /  \
-	//			  A'---C'
-	//			 /      \
-	//			/        \
-	//		   /		  \
-	//		  A		       \				
-	//					    C
-	//
-	//		Math to calculate trajectory in via point
-	//		**********************************************************
-	//		* p(t) = A' + v1*Kab*t +t^2/(2*(Tc'-Ta'))*(v2*Kbc-v1*Kab)*
-	//		**********************************************************
-	//		
-	//		*/
-
-	//		double val=0.0;
-
-
-	//		all_space_points.clear();
-	//		all_q_values.clear();
-	//		
-	//		Vector3D direct_vec = posEnd - posIni; //direction vector
-	//		double total_path = direct_vec.module(); //distance L = total path
-	//		
-	//		if (total_path<EPS)
-	//			return;
-
-	//	}
-		/*************************************************************
-			IF INTERPOLATOR SELECTED IS CUBIC POLINOMIAL TRAJECTORY TYPE 
-		**************************************************************/
-		if (interpolator_type==CPT)
-			for(int i=0;i<(int)actuators.size();i++)
-			{
-				actuators[i]->simulateInterpolatorPolinomial(time);
-			}
-
-		/**************************************************************
-			IF INTERPOLATOR SELECTED IS TRAPEZOIDAL VELOCITY PROFILE TYPE 
-		 **************************************************************/
-		else if (interpolator_type==TVP)
-		{
-			int signMovement=1;
-
-			if (check_q_init_value) //we need the initial values of the joints
-			{
-				for (int i=0;i<(int)actuators.size();i++)
+				if ((index_pos+1) != (int)all_q_values.size())
 				{
-					aux_q_init_value.push_back(joints[i]->getValue());
+					index_pos++;
+					updateTargetAndTagetTime(index_pos);
 				}
-				check_q_init_value=false;
-			}
-
-			for (int i=0;i<(int)actuators.size();i++)
-			{
-				if ((q_target[i]-aux_q_init_value[i])<0)
-					signMovement=-1;//if we go to target in the negative cuadrant
-				else 
-					signMovement=1;
-
-				actuators[i]->simulateInterpolatorTVP(aux_q_init_value[i],q_target[i], 
-									signMovement, time, targetTime, TVP_acceleration_time);
-			}
+				else
+				{
+					all_q_values.clear();
+					all_space_points.clear();
+					return;
+				}
+			}				
 		}
 
-		/*************************************************************
-			IF INTERPOLATOR SELECTED IS SPLINE TRAJECTORY TYPE 
-		**************************************************************/
-		else if (interpolator_type==SPLINE)
-			for(int i=0;i<(int)actuators.size();i++)
+		//else if(time >= (targetTime*0.85)) //if reach the 85% target time, we change to via point movement
+		//	if (path_type==LINEAR)
+		//	{
+		//		if ((index_pos+1) != (int)all_q_values.size())
+		//			computeViaPoint();
+
+		//	}
+		//	else if (next_q_target.size())
+		//	{
+		//		computeViaPoint();
+
+		//	}
+		else
+		{
+		//	if (via_point_flag)
+		//	//We activate via point
+		//	{
+		//		/* 
+		//			Via point ---> (A'-->C')
+		//				 
+		//				B
+		//				/\
+		//			   /  \
+		//			  A'---C'
+		//			 /      \
+		//			/        \
+		//		   /		  \
+		//		  A		       \				
+		//					    C
+		//
+		//		Math to calculate trajectory in via point
+		//		**********************************************************
+		//		* p(t) = A' + v1*Kab*t +t^2/(2*(Tc'-Ta'))*(v2*Kbc-v1*Kab)*
+		//		**********************************************************
+		//		
+		//		*/
+
+		//		double val=0.0;
+
+
+		//		all_space_points.clear();
+		//		all_q_values.clear();
+		//		
+		//		Vector3D direct_vec = posEnd - posIni; //direction vector
+		//		double total_path = direct_vec.module(); //distance L = total path
+		//		
+		//		if (total_path<EPS)
+		//			return;
+
+		//	}
+			/*************************************************************
+				IF INTERPOLATOR SELECTED IS CUBIC POLINOMIAL TRAJECTORY TYPE 
+			**************************************************************/
+			if (interpolator_type==CPT)
+				for(int i=0;i<(int)actuators.size();i++){
+					actuators[i]->simulateInterpolatorPolinomial(time);}
+
+			/**************************************************************
+				IF INTERPOLATOR SELECTED IS TRAPEZOIDAL VELOCITY PROFILE TYPE 
+			 **************************************************************/
+			else if (interpolator_type==TVP)
 			{
-				actuators[i]->simulateInterpolatorPolinomial(time);
+				int signMovement=1;
+					if (check_q_init_value) //we need the initial values of the joints
+					{
+						for (int i=0;i<(int)actuators.size();i++)
+						{
+							aux_q_init_value.push_back(joints[i]->getValue());
+						}
+						check_q_init_value=false;
+					}
+
+				for (int i=0;i<(int)actuators.size();i++)
+				{
+					if ((q_target[i]-aux_q_init_value[i])<0)//compare the initial joint value
+						signMovement=-1;//if we go to target in the negative cuadrant
+					else 
+						signMovement=1;
+
+
+					actuators[i]->simulateInterpolatorTVP(aux_q_init_value[i], q_target[i],signMovement,time, targetTime, TVP_acceleration_time);
+
+				}
 			}
-		time+=delta_t;
+			/*************************************************************
+				IF INTERPOLATOR SELECTED IS SPLINE TRAJECTORY TYPE 
+			**************************************************************/
+			else if (interpolator_type==SPLINE)
+				for(int i=0;i<(int)actuators.size();i++){
+					actuators[i]->simulateInterpolatorPolinomial(time);}
+
+			time+=delta_t;
+		}
 	}
 
 	ComposedEntity::simulate(delta_t);
@@ -386,7 +380,7 @@ void RobotSim::computeTargetTimePolinomial()
 	{
 		for(int i=0;i<(int)actuators.size();i++)
 		{
-			actuators[i]->setCubicPolinomialCoeficients(pathJoint[i],targetTime);
+			actuators[i]->computeCubicPolinomialCoeficients(pathJoint[i],targetTime);
 		}
 		return;
 	}
@@ -407,8 +401,8 @@ void RobotSim::computeTargetTimePolinomial()
 		
 		for (int i=1;i<(int)actuators.size();i++)
 		{
-			actuators[i]->setVelocIntermediates(veloc);
-			actuators[i]->setCubicPolinomialCoeficients(stretch,Tk);
+			actuators[i]->computeVelocIntermediates(veloc);
+			actuators[i]->computeCubicPolinomialCoeficients(stretch,Tk);
 		}
 		return;
 	}
@@ -421,8 +415,6 @@ void RobotSim::computeTargetTimeTVP()
 	/* Check which is the maximum time to get the target by all the joints.
 	For this we obtain the max values of the speed and acceleration of the joints and check
 	with their own path to travel  */
-
-	check_q_init_value=true;
 
 	double auxTargetTime=0.0,aux_time_acceleration=0.0;
 	double max_time_acceleration=0.0,maxTargetTime=0.0;
@@ -443,12 +435,12 @@ void RobotSim::computeTargetTimeTVP()
 		if (condition>path[i])//Bang Bang movement
 		{
 			auxTargetTime=2*sqrt(path[i]/maxAcceleration);//targetTime
-			aux_time_acceleration=0.5*auxTargetTime;//ta
+			aux_time_acceleration=0.5*auxTargetTime;//acceleration time 
 		}
 		else // speed and acceleration with maximus values
 		{		
 			auxTargetTime=path[i]/maxSpeed + maxSpeed/maxAcceleration;//targetTime
-			aux_time_acceleration=maxSpeed/maxAcceleration;//ta
+			aux_time_acceleration=maxSpeed/maxAcceleration;// acceleration time
 		}
 
 		if (maxTargetTime<auxTargetTime)//choose the max values
@@ -480,7 +472,12 @@ void RobotSim::computeTargetTimeTVP()
 	if(maxTargetTime<=0 && max_time_acceleration<=0)return;
 
 	double speed=0,accel=0,maxSp=0,maxAccel=0;
+	int signMovement = 1;
+	check_q_init_value=true;
+	aux_q_init_value.clear();
 
+
+	
 	for(int i=0;i<(int)actuators.size();i++)
 	{
 		if(i==index)continue;
@@ -497,7 +494,7 @@ void RobotSim::computeTargetTimeTVP()
 			speed=accel*max_time_acceleration;
 
 			if (speed>maxSp || accel>maxAccel)
-				return; //we have to recalculate the ta time to this actuator
+				return; //we have to recalculate the  acceleration time to this actuator
 			actuators[i]->setAcceleration(accel);
 			actuators[i]->setSpeed(speed);
 			actuators[i]->setInterpolatorTypeTVP("BangBang");
@@ -508,6 +505,15 @@ void RobotSim::computeTargetTimeTVP()
 			actuators[i]->setAcceleration(accel);
 			actuators[i]->setInterpolatorTypeTVP("MaximumSpeedAcceleration");
 		}
+		
+		//Now set all the necessary attributes to simulate with this interpolator						
+		
+		//if ((q_target[i]-joints[i]->getValue())<0)//compare the initial joint value
+		//	signMovement=-1;//if we go to target in the negative cuadrant
+		//else 
+		//	signMovement=1;
+
+		//actuators[i]->loadAttributesTVP(q_target[i]);//,signMovement,TVP_acceleration_time, targetTime);
 	}
 }
 

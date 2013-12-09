@@ -111,34 +111,42 @@ public:
 //specific methods Trapezoidal Velocity Profile interpolator (TVP)
 	bool setInterpolatorTypeTVP(string _type);
 	string getInterpolatorTypeTVP(){return InterpolatorTypeTVP;}
+	//void simulateInterpolatorTVP(double _time);
+	void loadAttributesTVP(int _signMovement);//double _q_init,double _q_target, int signMovement, double _TVP_acceleration_time, double targetTime);
 	void simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
-									double targetTime, double TVP_acceleration_time);
+									   double targetTime, double TVP_acceleration_time);
 
 //specific methods SPLINE and Cubical Polinomial Trajectory (CPT) interpolators 
-	void setCubicPolinomialCoeficients(double path,double targetTime);//used by both
-	void setVelocIntermediates (vector<double> veloc);//specific for SPLINE
+	void computeCubicPolinomialCoeficients(double path_joint,double targetTime);//used by both
+	void computeVelocIntermediates (vector<double> veloc);//specific for SPLINE
 	void simulateInterpolatorPolinomial(double _time);//used by both
 
 //Attributes
 protected:
 	SimpleJoint* s_Joint;
 
-	//kinematic simulation atributes
+	//kinematic simulation attributes
 	double speed, maxSpeed; // m/s rad/s
-	double acceleration, div_target, maxAcceleration; //rad/sec^2
+	double acceleration, maxAcceleration; //rad/sec^2
 	
 	double target, targetIntermediate;
 	bool targetActive; //true if target have to be reached
-	string InterpolatorTypeTVP;
-	//spline algorithm
-	double a0,a1,a2,a3; //polinomial coeficients
-
-	int index;//index of velocities intermediates
-
-	vector<double> velocInter;
-	
 	InterpolatorType interpolator_type;
 	float frequency; //Hz
+
+//specific cubic polinomial and spline interpolator
+	double a0,a1,a2,a3; //polinomial coeficients
+	int index_veloc_intermediates; //index of velocities intermediates
+	vector<double> velocInter; //velocities intermediates
+	
+//specific TVP interpolator
+	string InterpolatorTypeTVP;
+	//double q_init;//joint initial value
+	//double q_target;//joint final value
+	//double initial_time, target_time;//time to get the target
+	//double TVP_acceleration_time;//TVP_time_acceleration
+	int signMovement;// Value: 1 (positive cuadran) or -1 (negative cuadrant)
+
 
 };
 
