@@ -220,11 +220,6 @@ protected:
 //detect vía points
 	bool via_point_flag;//changing target between trajectory segments
 
-	//atributtes specific TVP movement	
-	bool check_q_init_value;//check if joints need to compute again which are their new initial values
-	double TVP_acceleration_time;//TVP_time_acceleration
-	vector<double> aux_q_init_value; //we need know the initial values
-
 };
 
 };//end namespace mr

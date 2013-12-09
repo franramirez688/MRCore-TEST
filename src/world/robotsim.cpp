@@ -252,29 +252,9 @@ void RobotSim::simulate(double delta_t)
 				IF INTERPOLATOR SELECTED IS TRAPEZOIDAL VELOCITY PROFILE TYPE 
 			 **************************************************************/
 			else if (interpolator_type==TVP)
-			{
-				int signMovement=1;
-					if (check_q_init_value) //we need the initial values of the joints
-					{
-						for (int i=0;i<(int)actuators.size();i++)
-						{
-							aux_q_init_value.push_back(joints[i]->getValue());
-						}
-						check_q_init_value=false;
-					}
-
 				for (int i=0;i<(int)actuators.size();i++)
-				{
-					if ((q_target[i]-aux_q_init_value[i])<0)//compare the initial joint value
-						signMovement=-1;//if we go to target in the negative cuadrant
-					else 
-						signMovement=1;
+					actuators[i]->simulateInterpolatorTVP(time);
 
-
-					actuators[i]->simulateInterpolatorTVP(aux_q_init_value[i], q_target[i],signMovement,time, targetTime, TVP_acceleration_time);
-
-				}
-			}
 			/*************************************************************
 				IF INTERPOLATOR SELECTED IS SPLINE TRAJECTORY TYPE 
 			**************************************************************/
@@ -420,6 +400,7 @@ void RobotSim::computeTargetTimeTVP()
 	double max_time_acceleration=0.0,maxTargetTime=0.0;
 	double maxSpeed=0.0,maxAcceleration=0.0;
 	double condition=0.0;
+	double TVP_acceleration_time=0.00;
 	vector<double> path;
 	int index=0;
 
@@ -470,14 +451,8 @@ void RobotSim::computeTargetTimeTVP()
 
 	//we adjust the speed and acceleration to get all the joints are finishing the movement at the same time
 	if(maxTargetTime<=0 && max_time_acceleration<=0)return;
-
 	double speed=0,accel=0,maxSp=0,maxAccel=0;
-	int signMovement = 1;
-	check_q_init_value=true;
-	aux_q_init_value.clear();
 
-
-	
 	for(int i=0;i<(int)actuators.size();i++)
 	{
 		if(i==index)continue;
@@ -506,15 +481,19 @@ void RobotSim::computeTargetTimeTVP()
 			actuators[i]->setInterpolatorTypeTVP("MaximumSpeedAcceleration");
 		}
 		
-		//Now set all the necessary attributes to simulate with this interpolator						
-		
-		//if ((q_target[i]-joints[i]->getValue())<0)//compare the initial joint value
-		//	signMovement=-1;//if we go to target in the negative cuadrant
-		//else 
-		//	signMovement=1;
-
-		//actuators[i]->loadAttributesTVP(q_target[i]);//,signMovement,TVP_acceleration_time, targetTime);
 	}
+
+	//Now set all the necessary attributes to simulate with this interpolator		
+	int signMovement=1;
+	for (int i=0;i<(int)actuators.size();i++)
+	{
+		if ((q_target[i]-joints[i]->getValue())<0)//compare the initial joint value
+			signMovement=-1;//if we go to target in the negative cuadrant
+		else 
+			signMovement=1;
+		actuators[i]->loadAttributesTVP(q_target[i],signMovement,  TVP_acceleration_time, targetTime);
+	}
+
 }
 
 

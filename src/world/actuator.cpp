@@ -213,94 +213,49 @@ void Actuator::simulateInterpolatorPolinomial(double _time)
 	SPECIFIC METHODS INTERPOLATOR TRAPEZOIDAL VELOCITY PROFILE
 *******************************************************************/
 
-void Actuator::simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
-									   double targetTime, double TVP_acceleration_time)
+void Actuator::loadAttributesTVP(double _q_target, int _signMovement, double _TVP_acceleration_time, double targetTime)
 {
-	double timeInit=0.00, timeFinal=0.00, val=0;
-	timeFinal = targetTime;
+	signMovement = _signMovement;
+	q_init = s_Joint->getValue();//initial value
+	q_target = _q_target;	
+	initial_time = 0.00;
+	target_time = targetTime;
+	signMovement = signMovement;
+	TVP_acceleration_time = _TVP_acceleration_time;
+}
+
+void Actuator::simulateInterpolatorTVP(double _time)
+{
+	double val=0.00;
 
     if(getInterpolatorTypeTVP()=="MaximumSpeedAcceleration")
     {
         //Acceleration phase
-        if (_time<(timeInit+TVP_acceleration_time) && _time>=timeInit)
-			val=qInit+signMovement*((getAcceleration()*0.5)*square(_time-timeInit));
+        if (_time<(initial_time+TVP_acceleration_time) && _time>=initial_time)
+			val=q_init+signMovement*((getAcceleration()*0.5)*square(_time-initial_time));
 
         //Velocity constant phase
-        if (_time>=(timeInit+TVP_acceleration_time) && _time<=(timeFinal-TVP_acceleration_time))
-			val=qInit+signMovement*(getSpeed()*(_time-timeInit-TVP_acceleration_time*0.5));
+        if (_time>=(initial_time+TVP_acceleration_time) && _time<=(target_time-TVP_acceleration_time))
+			val=q_init+signMovement*(getSpeed()*(_time-initial_time-TVP_acceleration_time*0.5));
 
         //Deceleration phase
-        if (_time>(timeFinal-TVP_acceleration_time) && _time<=timeFinal)
-			val=q_target-signMovement*((getAcceleration()*0.5)*square(timeFinal-_time));
+        if (_time>(target_time-TVP_acceleration_time) && _time<=target_time)
+			val=q_target-signMovement*((getAcceleration()*0.5)*square(target_time-_time));
     }
     else if(getInterpolatorTypeTVP()=="BangBang")
     {
         //Acceleration phase
-        if (_time<(timeFinal*0.5) && _time>=timeInit)
-			val=qInit+signMovement*((getMaxAcceleration()*0.5)*square(_time-timeInit));
+        if (_time<(target_time*0.5) && _time>=initial_time)
+			val=q_init+signMovement*((getMaxAcceleration()*0.5)*square(_time-initial_time));
 
         //Deceleration phase
-        if (_time>=(timeFinal*0.5) && _time<=timeFinal)
-			val=q_target-signMovement*((getMaxAcceleration()*0.5)*square(timeFinal-_time));
+        if (_time>=(target_time*0.5) && _time<=target_time)
+			val=q_target-signMovement*((getMaxAcceleration()*0.5)*square(target_time-_time));
     }
 
     setTarget(val);
+
 }
-
-void Actuator::loadAttributesTVP(int _signMovement)//double _q_init,double _q_target, int signMovement, double _TVP_acceleration_time, double targetTime)
-{
-	signMovement = _signMovement;
-	//q_init = _q_init;
-	//q_target = _q_target;	
-	//initial_time = 0.00;
-	//target_time = targetTime;
-	//sign_movement = signMovement;
-	//TVP_acceleration_time = _TVP_acceleration_time;
-}
-
-//void Actuator::simulateInterpolatorTVP(double _time)
-//{
-//	double val=0.00;
-//
-//    if(getInterpolatorTypeTVP()=="MaximumSpeedAcceleration")
-//    {
-//        //Acceleration phase
-//        if (_time<(initial_time+TVP_acceleration_time) && _time>=initial_time)
-//			val=q_init+sign_movement*((getAcceleration()*0.5)*square(_time-initial_time));
-//
-//        //Velocity constant phase
-//        if (_time>=(initial_time+TVP_acceleration_time) && _time<=(target_time-TVP_acceleration_time))
-//			val=q_init+sign_movement*(getSpeed()*(_time-initial_time-TVP_acceleration_time*0.5));
-//
-//        //Deceleration phase
-//        if (_time>(target_time-TVP_acceleration_time) && _time<=target_time)
-//			val=q_target-sign_movement*((getAcceleration()*0.5)*square(target_time-_time));
-//    }
-//    else if(getInterpolatorTypeTVP()=="BangBang")
-//    {
-//        //Acceleration phase
-//        if (_time<(target_time*0.5) && _time>=initial_time)
-//			val=q_init+sign_movement*((getMaxAcceleration()*0.5)*square(_time-initial_time));
-//
-//        //Deceleration phase
-//        if (_time>=(target_time*0.5) && _time<=target_time)
-//			val=q_target-sign_movement*((getMaxAcceleration()*0.5)*square(target_time-_time));
-//    }
-//
-//    setTarget(val);
-//
-//}
-//
-//void Actuator::loadAttributesTVP(double _q_init,double _q_target, int signMovement, double _TVP_acceleration_time, double targetTime)
-//{
-//	q_init = _q_init;
-//	q_target = _q_target;	
-//	initial_time = 0.00;
-//	target_time = targetTime;
-//	sign_movement = signMovement;
-//	TVP_acceleration_time = _TVP_acceleration_time;
-//}
-
 
 bool Actuator::setInterpolatorTypeTVP(string _type)
 {

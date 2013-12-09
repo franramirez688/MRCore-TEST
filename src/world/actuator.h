@@ -112,9 +112,10 @@ public:
 	bool setInterpolatorTypeTVP(string _type);
 	string getInterpolatorTypeTVP(){return InterpolatorTypeTVP;}
 	//void simulateInterpolatorTVP(double _time);
-	void loadAttributesTVP(int _signMovement);//double _q_init,double _q_target, int signMovement, double _TVP_acceleration_time, double targetTime);
-	void simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
-									   double targetTime, double TVP_acceleration_time);
+	void loadAttributesTVP(double _q_target, int _signMovement, double _TVP_acceleration_time, double targetTime);
+	//void simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
+	//								   double targetTime, double TVP_acceleration_time);
+	void simulateInterpolatorTVP(double _time);
 
 //specific methods SPLINE and Cubical Polinomial Trajectory (CPT) interpolators 
 	void computeCubicPolinomialCoeficients(double path_joint,double targetTime);//used by both
@@ -141,11 +142,11 @@ protected:
 	
 //specific TVP interpolator
 	string InterpolatorTypeTVP;
-	//double q_init;//joint initial value
-	//double q_target;//joint final value
-	//double initial_time, target_time;//time to get the target
-	//double TVP_acceleration_time;//TVP_time_acceleration
-	int signMovement;// Value: 1 (positive cuadran) or -1 (negative cuadrant)
+	double q_init;//joint initial value
+	double q_target;//joint final value
+	double initial_time, target_time;//time to get the target
+	double TVP_acceleration_time;//TVP_time_acceleration
+	int signMovement;// Value: 1 (positive cuadrant) or -1 (negative cuadrant)
 
 
 };
