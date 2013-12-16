@@ -45,7 +45,7 @@ namespace mr
 	class SimpleJoint;
 	
 	//types of movements
-	enum InterpolatorType 
+	enum PositionInterpolator 
 	{
 		CPT,
 		TVP,
@@ -105,12 +105,12 @@ public:
 	//}
         
 //selection movement
-	void setInterpolatorType (InterpolatorType _type=CPT){interpolator_type=_type;}
-	InterpolatorType getInterpolatorType (){return interpolator_type;}
+	void setPositionInterpolator (PositionInterpolator _type=CPT){interpolator_position=_type;}
+	PositionInterpolator getPositionInterpolator (){return interpolator_position;}
 
 //specific methods Trapezoidal Velocity Profile interpolator (TVP)
-	bool setInterpolatorTypeTVP(string _type);
-	string getInterpolatorTypeTVP(){return InterpolatorTypeTVP;}
+	bool setPositionInterpolatorTVP(string _type);
+	string getPositionInterpolatorTVP(){return PositionInterpolatorTVP;}
 	//void simulateInterpolatorTVP(double _time);
 	void loadAttributesTVP(double _q_target, int _signMovement, double _TVP_acceleration_time, double targetTime);
 	//void simulateInterpolatorTVP(double qInit,double q_target,int signMovement,double _time, 
@@ -132,7 +132,7 @@ protected:
 	
 	double target, targetIntermediate;
 	bool targetActive; //true if target have to be reached
-	InterpolatorType interpolator_type;
+	PositionInterpolator interpolator_position;
 	float frequency; //Hz
 
 //specific cubic polinomial and spline interpolator
@@ -141,7 +141,7 @@ protected:
 	vector<double> velocInter; //velocities intermediates
 	
 //specific TVP interpolator
-	string InterpolatorTypeTVP;
+	string PositionInterpolatorTVP;
 	double q_init;//joint initial value
 	double q_target;//joint final value
 	double initial_time, target_time;//time to get the target

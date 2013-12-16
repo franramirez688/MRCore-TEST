@@ -76,7 +76,29 @@ void OrientationMatrix::getRPY(double& rx, double& ry, double& rz)
 	rx = atan2(sin(rz)*mat[0][2]-cos(rz)*mat[1][2], -sin(rz)*mat[0][1]+cos(rz)*mat[1][1]);
 }
 
+void OrientationMatrix::getAxisAngle (double& _theta, Vector3D & _axis)
+{
+	//angle
+	_theta = acos(((mat[0][0]+mat[1][1]+mat[2][2])-1)/2.00);
+	
+	//axis
+	double coef = 1.00/(2*sin(_theta));
+	_axis = Vector3D(coef*(mat[3][2] - mat[2][3]),
+					 coef*(mat[1][3] - mat[3][1]),
+					 coef*(mat[2][1] - mat[1][2]));
+}
 
+void OrientationMatrix::getQuaternion (Quaternion& _q)
+{
+	double theta;
+	Vector3D u;
+	getAxisAngle(theta,u);
+	
+	double val = sin(theta/2.00);
+	Vector3D vec(u.x*val, u.y*val, u.z*val);
+	_q = Quaternion(cos(theta/2.00),vec);
+
+}
 
 OrientationMatrix::OrientationMatrix(double roll, double pitch, double yaw)
 {

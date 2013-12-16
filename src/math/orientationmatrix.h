@@ -46,6 +46,8 @@ namespace mr
 	consequence is that the matrix elements are public.
 */
 enum Axis {X_AXIS, Y_AXIS, Z_AXIS};
+class Quaternion;
+
 class OrientationMatrix:public Matrix3x3{
 
 private:
@@ -78,6 +80,8 @@ public:
 	//Roll pitch yaw convention (eq to rotation trx, ry, rz fixed axis)
 	OrientationMatrix & setRPY(double roll, double pitch, double yaw);
 	void getRPY(double& roll, double& pitch, double& yaw);
+	void getAxisAngle (double& _theta, Vector3D& _axis);
+	void getQuaternion (Quaternion& _q);
 
 	inline double getDeterminant(){return 1;} 
 	inline OrientationMatrix inverted()const{
@@ -96,6 +100,8 @@ public:
 		return Vector3D(mat[0][2],mat[1][2],mat[2][2]);
 	}
 
+	
+
 //friend operators
 
 
@@ -105,10 +111,48 @@ public:
 };
 
 
+class Quaternion
+{
+public:
+	//attributes
+	double scal;
+	Vector3D vec;
 
+	//methods
+	Quaternion(){};
+	Quaternion(double _scalar, Vector3D _vectorial):scal(_scalar),vec(_vectorial){};
+	~Quaternion();
+	inline Quaternion operator *(const Quaternion& q)const;
+	inline Quaternion conjugated();
+	inline Quaternion inverse();
+	inline double norm();
 
+};
 
+//inline methods
+Quaternion  Quaternion::operator *(const Quaternion& q)const
+{
+	return Quaternion (scal*q.scal - vec*q.vec,
+		vec.cross(q.vec) + q.vec*scal + vec*q.scal);
+}
 
+Quaternion Quaternion::inverse()
+{
+	double _norm = norm();
+	return Quaternion(scal/_norm,
+					conjugated().vec/_norm);
+}
+
+Quaternion Quaternion::conjugated()
+{
+	Vector3D _vec((-1)*vec.x,(-1)*vec.y,(-1)*vec.z);
+	return Quaternion(scal,_vec);
+}
+
+double Quaternion::norm()
+{
+	return sqrt(scal*scal + vec.x*vec.x + vec.y*vec.y + vec.z*vec.z);
+}
 
 }
 #endif  //__MRCORE__ORIENTATIONMATRIX_H

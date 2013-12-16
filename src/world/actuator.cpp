@@ -52,10 +52,10 @@ Actuator::Actuator(double _speed,double _maxSpeed,double _acceleration, double _
 	a0=a1=a2=a3=0.0;	
 	frequency=1000;
 
-	InterpolatorTypeTVP="MaximumSpeedAcceleration";
+	PositionInterpolatorTVP="MaximumSpeedAcceleration";
 
 	index_veloc_intermediates=0;
-	interpolator_type=TVP;
+	interpolator_position=TVP;
 }
 
 
@@ -133,7 +133,7 @@ void Actuator::simulate(double delta_t)
 	
 	double value=s_Joint->getValue();
 	double d=target-value;	
-	if(interpolator_type==CPT)
+	if(interpolator_position==CPT)
 	{	
 		double inc=delta_t*speed;
 		if(d<0)inc=((-inc<d)?d:(-inc));
@@ -145,7 +145,7 @@ void Actuator::simulate(double delta_t)
 		else s_Joint->setValue(value+inc);
 	}
 
-	else if(interpolator_type==TVP || interpolator_type==SPLINE)
+	else if(interpolator_position==TVP || interpolator_position==SPLINE)
 	{
 		if(fabs(d)<EPS)
 			targetActive=false;
@@ -173,14 +173,14 @@ void Actuator::linkTo (PositionableEntity *p)
 *******************************************************************************/
 void Actuator::computeCubicPolinomialCoeficients(double path_joint,double targetTime)
 {
-	if (interpolator_type==CPT)
+	if (interpolator_position==CPT)
 	{
 		a0=s_Joint->getValue();//Current coordiantes
 		a1=0.0;
 		a2=( 3*(path_joint)/(targetTime*targetTime));
 		a3=(-2*(path_joint)/(targetTime*targetTime*targetTime));
 	}
-	else if (interpolator_type==SPLINE)
+	else if (interpolator_position==SPLINE)
 	{
 		double stretch=path_joint;
 		double Tk=targetTime;
@@ -200,7 +200,7 @@ void Actuator::simulateInterpolatorPolinomial(double _time)
 
 	val=a0 + a1*_time + a2*square(_time) + a3*square(_time)*_time;
 
-	if (interpolator_type == CPT)
+	if (interpolator_position == CPT)
 	{
 		sp=a1+ 2*a2*_time + 3*a3*square(_time);
 		setSpeed(sp);
@@ -228,7 +228,7 @@ void Actuator::simulateInterpolatorTVP(double _time)
 {
 	double val=0.00;
 
-    if(getInterpolatorTypeTVP()=="MaximumSpeedAcceleration")
+    if(getPositionInterpolatorTVP()=="MaximumSpeedAcceleration")
     {
         //Acceleration phase
         if (_time<(initial_time+TVP_acceleration_time) && _time>=initial_time)
@@ -242,7 +242,7 @@ void Actuator::simulateInterpolatorTVP(double _time)
         if (_time>(target_time-TVP_acceleration_time) && _time<=target_time)
 			val=q_target-signMovement*((getAcceleration()*0.5)*square(target_time-_time));
     }
-    else if(getInterpolatorTypeTVP()=="BangBang")
+    else if(getPositionInterpolatorTVP()=="BangBang")
     {
         //Acceleration phase
         if (_time<(target_time*0.5) && _time>=initial_time)
@@ -257,13 +257,13 @@ void Actuator::simulateInterpolatorTVP(double _time)
 
 }
 
-bool Actuator::setInterpolatorTypeTVP(string _type)
+bool Actuator::setPositionInterpolatorTVP(string _type)
 {
-	InterpolatorTypeTVP = string();
+	PositionInterpolatorTVP = string();
 
 	if(_type=="BangBang" || _type=="MaximumSpeedAcceleration")
 	{
-		InterpolatorTypeTVP=_type;
+		PositionInterpolatorTVP=_type;
 		return true;
 	}
 

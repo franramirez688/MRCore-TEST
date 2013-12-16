@@ -244,21 +244,21 @@ void RobotSim::simulate(double delta_t)
 			/*************************************************************
 				IF INTERPOLATOR SELECTED IS CUBIC POLINOMIAL TRAJECTORY TYPE 
 			**************************************************************/
-			if (interpolator_type==CPT)
+			if (interpolator_position==CPT)
 				for(int i=0;i<(int)actuators.size();i++){
 					actuators[i]->simulateInterpolatorPolinomial(time);}
 
 			/**************************************************************
 				IF INTERPOLATOR SELECTED IS TRAPEZOIDAL VELOCITY PROFILE TYPE 
 			 **************************************************************/
-			else if (interpolator_type==TVP)
+			else if (interpolator_position==TVP)
 				for (int i=0;i<(int)actuators.size();i++)
 					actuators[i]->simulateInterpolatorTVP(time);
 
 			/*************************************************************
 				IF INTERPOLATOR SELECTED IS SPLINE TRAJECTORY TYPE 
 			**************************************************************/
-			else if (interpolator_type==SPLINE)
+			else if (interpolator_position==SPLINE)
 				for(int i=0;i<(int)actuators.size();i++){
 					actuators[i]->simulateInterpolatorPolinomial(time);}
 
@@ -315,20 +315,20 @@ void RobotSim::computeTargetTime()
 	/*************************************************************
 		IF INTERPOLATOR SELECTED IS CUBIC POLINOMIAL  TYPE 
 	**************************************************************/
-	if (interpolator_type==CPT)
+	if (interpolator_position==CPT)
 		computeTargetTimePolinomial();
 
 	/******************************************************************
 		IF INTERPOLATOR SELECTED IS TRAPEZOIDAL VELOCITY PROFILE TYPE 
 	*******************************************************************/
-	else if (interpolator_type==TVP)
+	else if (interpolator_position==TVP)
 		computeTargetTimeTVP();
 
 	/******************************************************************
 		IF INTERPOLATOR SELECTED IS SPLINE TYPE
 	*******************************************************************/
 
-	else if (interpolator_type==SPLINE)
+	else if (interpolator_position==SPLINE)
 		computeTargetTimePolinomial();
 
 }
@@ -356,7 +356,7 @@ void RobotSim::computeTargetTimePolinomial()
 	targetTime = longestPath / lowestSpeed;
 
 	//if interpolator is CPT
-	if (interpolator_type == CPT)
+	if (interpolator_position == CPT)
 	{
 		for(int i=0;i<(int)actuators.size();i++)
 		{
@@ -365,7 +365,7 @@ void RobotSim::computeTargetTimePolinomial()
 		return;
 	}
 	//if interpolator is SPLINE
-	else if (interpolator_type == SPLINE)
+	else if (interpolator_position == SPLINE)
 	{
 		double Tk=0.1,stretch=0.1;
 		int nIterations=(int)(targetTime/Tk);
@@ -437,12 +437,12 @@ void RobotSim::computeTargetTimeTVP()
 	TVP_acceleration_time=max_time_acceleration;
 
 	if(max_time_acceleration==(0.5*maxTargetTime))
-		actuators[index]->setInterpolatorTypeTVP("BangBang");
+		actuators[index]->setPositionInterpolatorTVP("BangBang");
 	else 
 	{
 		actuators[index]->setSpeed(actuators[index]->getMaxSpeed());
 		actuators[index]->setAcceleration(actuators[index]->getMaxAcceleration());
-		actuators[index]->setInterpolatorTypeTVP("MaximumSpeedAcceleration");
+		actuators[index]->setPositionInterpolatorTVP("MaximumSpeedAcceleration");
 	}
 
 	/*
@@ -472,13 +472,13 @@ void RobotSim::computeTargetTimeTVP()
 				return; //we have to recalculate the  acceleration time to this actuator
 			actuators[i]->setAcceleration(accel);
 			actuators[i]->setSpeed(speed);
-			actuators[i]->setInterpolatorTypeTVP("BangBang");
+			actuators[i]->setPositionInterpolatorTVP("BangBang");
 		}
 		else
 		{
 			actuators[i]->setSpeed(speed);
 			actuators[i]->setAcceleration(accel);
-			actuators[i]->setInterpolatorTypeTVP("MaximumSpeedAcceleration");
+			actuators[i]->setPositionInterpolatorTVP("MaximumSpeedAcceleration");
 		}
 		
 	}
@@ -505,29 +505,11 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 	/*
 		Calculating the vector of intermediate orientations
 	*/
-	Vector3D orientIni;
-	Vector3D orientEnd;
+	Matrix3x3 &orientIni = td3d.orientation;//get final orientation
+	Matrix3x3 &orientEnd = getTcpLocation().orientation;//get current orientation
 
-	//double _rollEnd=0.00, _pitchEnd=0.00, _yawEnd=0.00;
-	//double _rollIni=0.00, _pitchIni=0.00, _yawIni=0.00;
-
-	//td3d.orientation.getRPY(_rollEnd, _pitchEnd, _yawEnd);//get final orientation
-	//getTcpLocation().orientation.getRPY(_rollIni, _pitchIni, _yawIni);//get current orientation
-
-	td3d.orientation.getRPY(orientIni.x, orientIni.y, orientIni.z);//get final orientation
-	getTcpLocation().orientation.getRPY(orientEnd.x, orientEnd.y, orientEnd.z);//get current orientation
 	
-	Vector3D variation_angles = orientEnd - orientIni; //direction vector
-	double total_orientation_path = variation_angles.module(); 
 
-
-	double angular_speed_to_achieve = 5.00; //angular velocity which will be imposed to all actuators
-	double target_orient_max_time = total_orientation_path / angular_speed_to_achieve;
-
-	double divisions = target_orient_max_time * controlFrequency;
-	int div_orient = (int)divisions;
-	if (div_orient == 0)div_orient=1;
-	variation_angles=variation_angles/div_orient;
 
 	/*
 		Calculating the vector of intermediate positions
@@ -546,31 +528,71 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 	double speed_to_achieve = 5.00; //velocity which will be imposed to all actuators
 	double target_max_time = total_path / speed_to_achieve;
 	
-	divisions = target_max_time * controlFrequency;
+	double divisions = target_max_time * controlFrequency;
 	int div_pos = (int)divisions;
 	if (div_pos == 0)div_pos=1;
 	direct_vec=direct_vec/div_pos;
 	
-	for (int i=0,j=0;i<div_pos,j<div_orient;i++,j++)
+//	for (int i=0,j=0;i<div_pos,j<div_orient;i++,j++)
+	for (int i=0;i<div_pos;i++)
 	{
 		//position
 		posIni.x+=direct_vec.x;
 		posIni.y+=direct_vec.y;
 		posIni.z+=direct_vec.z;
 
-		//orientation
-		orientIni.x+=variation_angles.x;
-		orientIni.y+=variation_angles.y;
-		orientIni.z+=variation_angles.z;
+		////orientation
+		//orientIni.x+=variation_angles.x;
+		//orientIni.y+=variation_angles.y;
+		//orientIni.z+=variation_angles.z;
 
-		Transformation3D td3_final(posIni.x, posIni.y, posIni.z,
-								   orientIni.x, orientIni.y, orientIni.z);
+		Transformation3D td3_final(posIni.x, posIni.y, posIni.z);
+		//						   orientIni.x, orientIni.y, orientIni.z);
 		all_space_points.push_back(td3_final);
 
 	}// we already have all the intermediate positions and orientations (X,Y,Z,ROLL,PITCH,YAW)
 	return true;
 
 }
+
+void RobotSim::computeOrientation (Transformation3D td3d, vector<vector<double>> &_orient)
+{
+
+	OrientationMatrix orientIni = td3d.orientation;//get final orientation
+	OrientationMatrix orientEnd = getTcpLocation().orientation;//get current orientation
+	//compute matrix Init->Final
+	OrientationMatrix orientInit_End = orientIni.transposed()*orientEnd;
+
+	/* 
+		Calculating axis/angle intermediate which connect the initial rotation matrix
+		whith the final one
+	*/
+
+	double theta; //angle
+	Vector3D u; //axis
+
+	orientInit_End.getAxisAngle(theta,u);
+
+	Quaternion q1;//quaternion initial
+	Quaternion q2;//quaternion final
+	
+	orientIni.getQuaternion(q1);
+	orientEnd.getQuaternion(q2);
+
+
+	/*
+		Now select the interpolator method to calculate intermediate orientations.
+		All the interpolators will use cuaternions to calculate intermadiate orientations.
+	*/
+	
+		if (interpolator_orientation == SLERP)
+		{
+
+
+
+		}	
+}
+
 
 bool RobotSim::computeLinearPathAbs (Transformation3D td3d)
 {	
@@ -599,7 +621,7 @@ void RobotSim::computeViaPoint()
 	//double p1 = 0.00;
 
 	////change the other target
-	//if (interpolator_type==TVP)
+	//if (interpolator_position==TVP)
 	//	for (int i=0;i<(int)actuators.size();i++)
 	//	{
 	//		//if (tInit<=time && time<=(t1-tau))

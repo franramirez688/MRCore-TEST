@@ -55,10 +55,16 @@ namespace mr
 	
 	*/
 
-enum PathType 
+enum PathType //Linear path or synchronous path
 		{
 			SYNC_JOINT,
 			LINEAR,
+		};
+
+enum OrientationInterpolator //types of orientation interpolators
+		{
+			SLERP,
+			NIELSON_SHIEH,
 		};
 
 class RobotSim : public ComposedEntity 
@@ -74,7 +80,7 @@ public:
 
 
 //Constructor
-	RobotSim(void):tcp(0),interpolator_type(TVP),controlFrequency(100),path_type(LINEAR){}
+	RobotSim(void):tcp(0),interpolator_position(TVP),controlFrequency(100),path_type(LINEAR){}
 
 //Set and get i-joint value
 	virtual bool setJointValue(int i,double val) {if(i<(int)joints.size())joints[i]->setValue(val);else return false; return true;}
@@ -133,8 +139,6 @@ public:
 		return false;
 	}
 
-	virtual void computeTrajectoryTo(vector<double> _q);
-	
 	void computeTargetTime();//general function to compute the target time depending on interpolator
 	void computeTargetTimePolinomial();//CPT and SPLINE
 	void computeTargetTimeTVP();//TVP
@@ -146,18 +150,27 @@ public:
 	virtual bool computeTrajectoryTo(Transformation3D t);
 	virtual bool computeTrajectoryToAbs(Transformation3D t);
 
+//Load values to move all the robot's joint
+	virtual void computeTrajectoryTo(vector<double> _q);
+
 //Selection type of interpolator and movement
-	virtual bool setInterpolatorType (InterpolatorType _type){
+	virtual bool setPositionInterpolator (PositionInterpolator _type){
 		if (checkRobotIsMoving()) return false;
 		for (int i=0;i<(int)actuators.size();i++){
-			actuators[i]->setInterpolatorType(_type);
+			actuators[i]->setPositionInterpolator(_type);
 		}
-		interpolator_type=_type;
+		interpolator_position=_type;
 		return true;
 	}	
 	
-	virtual InterpolatorType getInterpolatorType (){
-		return interpolator_type;
+	virtual PositionInterpolator getPositionInterpolator (){
+		return interpolator_position;
+	}
+	
+	virtual bool setOrientationInterpolator (OrientationInterpolator _type){
+		if (checkRobotIsMoving()) return false;
+		interpolator_orientation = _type;
+		return true;
 	}
 
 	virtual bool setPathType (PathType _type){
@@ -190,6 +203,7 @@ protected:
 //Methods to linear path movement
 	bool computeLinearPath (Transformation3D td3d);
 	bool computeLinearPathAbs (Transformation3D td3d);
+	void computeOrientation (Transformation3D td3d, vector<vector<double>> &_orient);
 	void updateTargetAndTagetTime(int index);
 	void computeViaPoint();
 
@@ -208,7 +222,8 @@ protected:
 	vector<double> q_target;
 	vector<double> next_q_target;
 
-	InterpolatorType interpolator_type; //TVP, CPT or SPLINE
+	PositionInterpolator interpolator_position; //TVP, CPT or SPLINE
+	OrientationInterpolator interpolator_orientation; //SLERP, NIELSON_SHIEH
 	PathType path_type;
 	float controlFrequency; //Hz 
 
