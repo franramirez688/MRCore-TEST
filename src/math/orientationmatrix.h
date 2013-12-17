@@ -115,44 +115,41 @@ class Quaternion
 {
 public:
 	//attributes
-	double scal;
-	Vector3D vec;
+	double angle,scal;//const part = cos(p/2)
+	Vector3D vec;//vectorial part = v*sin(p/2)
 
 	//methods
 	Quaternion(){};
-	Quaternion(double _scalar, Vector3D _vectorial):scal(_scalar),vec(_vectorial){};
+	Quaternion(double _angle, Vector3D _vector):angle(_angle){
+		scal = cos(_angle/2.00);
+		vec = _vector*sin(_angle/2.00);
+	}
 	~Quaternion();
-	inline Quaternion operator *(const Quaternion& q)const;
-	inline Quaternion conjugated();
-	inline Quaternion inverse();
-	inline double norm();
+
+	Quaternion operator *(const Quaternion& q)const{
+		return Quaternion (scal*q.scal - vec*q.vec,
+						   vec.cross(q.vec) + q.vec*scal + vec*q.scal);
+	}
+
+	Quaternion conjugated(){return Quaternion(scal,vec*(-1));}
+
+	Quaternion inverse(){
+		double _norm = norm();
+		if (_norm<EPS)return this;
+		return Quaternion(scal/_norm, conjugated().vec/_norm);
+	}
+
+	double norm(){
+		return sqrt(scal*scal + vec.x*vec.x + vec.y*vec.y + vec.z*vec.z);
+	}
+
+	Quaternion power (double t){
+
+		return Quaternion(cos(angle*t),
+
+	}
 
 };
-
-//inline methods
-Quaternion  Quaternion::operator *(const Quaternion& q)const
-{
-	return Quaternion (scal*q.scal - vec*q.vec,
-		vec.cross(q.vec) + q.vec*scal + vec*q.scal);
-}
-
-Quaternion Quaternion::inverse()
-{
-	double _norm = norm();
-	return Quaternion(scal/_norm,
-					conjugated().vec/_norm);
-}
-
-Quaternion Quaternion::conjugated()
-{
-	Vector3D _vec((-1)*vec.x,(-1)*vec.y,(-1)*vec.z);
-	return Quaternion(scal,_vec);
-}
-
-double Quaternion::norm()
-{
-	return sqrt(scal*scal + vec.x*vec.x + vec.y*vec.y + vec.z*vec.z);
-}
 
 }
 #endif  //__MRCORE__ORIENTATIONMATRIX_H

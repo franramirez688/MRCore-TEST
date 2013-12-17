@@ -573,7 +573,7 @@ void RobotSim::computeOrientation (Transformation3D td3d, vector<vector<double>>
 
 	orientInit_End.getAxisAngle(theta,u);
 
-	Quaternion q1;//quaternion initial
+	Quaternion q1,q_inv;//quaternion initial
 	Quaternion q2;//quaternion final
 	
 	orientIni.getQuaternion(q1);
@@ -585,12 +585,16 @@ void RobotSim::computeOrientation (Transformation3D td3d, vector<vector<double>>
 		All the interpolators will use cuaternions to calculate intermadiate orientations.
 	*/
 	
-		if (interpolator_orientation == SLERP)
-		{
+	//SLERP = q1*(q1^-1*q2)^t
+	if (interpolator_orientation == SLERP)
+	{
+		q_inv = q1.inverse();
+		q2=q_inv*q2;
+		q2=
 
 
 
-		}	
+	}	
 }
 
 
