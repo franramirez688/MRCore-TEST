@@ -80,7 +80,8 @@ public:
 
 
 //Constructor
-	RobotSim(void):tcp(0),interpolator_position(TVP),controlFrequency(100),path_type(LINEAR){}
+	RobotSim(void):tcp(0),interpolator_position(TVP),controlFrequency(100),
+		path_type(LINEAR), interpolator_orientation(SLERP){}
 
 //Set and get i-joint value
 	virtual bool setJointValue(int i,double val) {if(i<(int)joints.size())joints[i]->setValue(val);else return false; return true;}

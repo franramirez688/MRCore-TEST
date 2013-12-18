@@ -33,7 +33,7 @@
 #define __MRCORE__ORIENTATIONMATRIX_H
 
 #include <iostream>
-
+#include "mrmath.h"
 #include "matrix3x3.h"
 
 namespace mr
@@ -50,10 +50,9 @@ class Quaternion;
 
 class OrientationMatrix:public Matrix3x3{
 
-private:
-	inline OrientationMatrix(const Matrix3x3 &m):Matrix3x3(m){}
 public:
 //constructors
+	inline OrientationMatrix(const Matrix3x3 &m):Matrix3x3(m){}
 	inline OrientationMatrix():Matrix3x3(1){}
 	OrientationMatrix(double roll, double pitch, double yaw);
 	OrientationMatrix(Axis axis,double ang);
@@ -111,43 +110,111 @@ public:
 };
 
 
+
+//using quaternions to represent rotations
 class Quaternion
 {
 public:
 	//attributes
-	double angle,scal;//const part = cos(p/2)
+	double angle;//theta angle
+	double scal;//const part = cos(p/2)
+	Vector3D axis;//axis vector
 	Vector3D vec;//vectorial part = v*sin(p/2)
+	double q0,q1,q2,q3;//other represenattion q = [q0,q1,q2,q3]
 
 	//methods
 	Quaternion(){};
-	Quaternion(double _angle, Vector3D _vector):angle(_angle){
-		scal = cos(_angle/2.00);
-		vec = _vector*sin(_angle/2.00);
+	Quaternion(double _scalar, Vector3D _vector):scal(_scalar), vec(_vector){
+		
+		angle = acos(_scalar)*2.00;
+		axis = _vector/sin(angle/2.00);
+	
+		q0 = _scalar;
+		q1 = _vector.x;
+		q2 = _vector.y;
+		q3 = _vector.z;
 	}
-	~Quaternion();
+
+	Quaternion(double _q0, double _q1, double _q2, double _q3){
+		
+		q0 = _q0;
+		q1 = _q1;
+		q2 = _q2;
+		q3 = _q3;
+
+		scal = q0;
+		vec = Vector3D(q1,q2,q3);
+
+		angle = acos(scal)*2.00;
+		axis = vec/sin(angle/2.00);
+	}
+
+	virtual ~Quaternion(){};
+
+	void setAngleAxis(double _angle, Vector3D _axis){
+
+		angle = _angle;
+		axis = _axis;
+
+		scal = cos(_angle/2.00);
+		vec = _axis*sin(angle/2.00);
+	
+		q0 = scal;
+		q1 = vec.x;
+		q2 = vec.y;
+		q3 = vec.z;
+	}
+
+	Quaternion & operator= (const Quaternion &q){
+		setAngleAxis(q.angle, q.axis);
+		return *this;
+	}
 
 	Quaternion operator *(const Quaternion& q)const{
 		return Quaternion (scal*q.scal - vec*q.vec,
 						   vec.cross(q.vec) + q.vec*scal + vec*q.scal);
 	}
+	
+	Quaternion operator *(double f)const{
+		return Quaternion (scal*f, vec*f);
+	}
+
+	Quaternion operator /(double f)const{
+		return Quaternion (scal/f, vec/f);
+	}
+	Quaternion operator +(const Quaternion& q)const{
+		return Quaternion (scal + q.scal, vec + q.vec);
+	}
 
 	Quaternion conjugated(){return Quaternion(scal,vec*(-1));}
 
 	Quaternion inverse(){
-		double _norm = norm();
-		if (_norm<EPS)return this;
-		return Quaternion(scal/_norm, conjugated().vec/_norm);
+		double div = square(norm());
+		if (div<EPS)return (*this);
+		return Quaternion(scal/div, conjugated().axis/div);
 	}
 
 	double norm(){
 		return sqrt(scal*scal + vec.x*vec.x + vec.y*vec.y + vec.z*vec.z);
+		//if unit return 1
+	}
+	
+	//Quaternion power (double t){
+
+	//	return Quaternion(cos(angle*t/2.00),axis*sin(angle*t/2.00));
+	//}
+
+	OrientationMatrix getOrientationMatrix (){
+
+		Matrix3x3 m( 
+			q0*q0+q1*q1-q2*q2-q3*q3, 2*q1*q2 - 2*q0*q3, 2*q1*q3 + 2*q0*q2,
+			2*q1*q2 + 2*q0*q3, q0*q0-q1*q1+q2*q2-q3*q3, 2*q2*q3-2*q0*q1,
+			2*q1*q3-2*q0*q2, 2*q2*q3+2*q0*q1, q0*q0-q1*q1-q2*q2+q3*q3);
+
+		return OrientationMatrix(m);
 	}
 
-	Quaternion power (double t){
 
-		return Quaternion(cos(angle*t),
-
-	}
 
 };
 

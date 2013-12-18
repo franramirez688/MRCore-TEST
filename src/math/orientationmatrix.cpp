@@ -93,8 +93,8 @@ void OrientationMatrix::getQuaternion (Quaternion& _q)
 	double theta;
 	Vector3D u;
 	getAxisAngle(theta,u);
-	
-	_q = Quaternion(theta,u);
+	u = u.normalize();//convert to unit vector
+	_q = Quaternion(cos(theta/2.00),u*sin(theta/2.00));
 
 }
 

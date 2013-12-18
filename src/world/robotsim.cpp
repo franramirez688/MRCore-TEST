@@ -502,14 +502,6 @@ void RobotSim::computeTargetTimeTVP()
 */
 bool RobotSim::computeLinearPath (Transformation3D td3d)
 {	
-	/*
-		Calculating the vector of intermediate orientations
-	*/
-	Matrix3x3 &orientIni = td3d.orientation;//get final orientation
-	Matrix3x3 &orientEnd = getTcpLocation().orientation;//get current orientation
-
-	
-
 
 	/*
 		Calculating the vector of intermediate positions
@@ -532,6 +524,26 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 	int div_pos = (int)divisions;
 	if (div_pos == 0)div_pos=1;
 	direct_vec=direct_vec/div_pos;
+
+
+	/*
+		Calculating the vector of intermediate orientations
+	*/
+	OrientationMatrix orientIni = td3d.orientation;//get final orientation
+	OrientationMatrix orientEnd = getTcpLocation().orientation;//get current orientation
+	//compute matrix Init->Final
+	//OrientationMatrix orientInit_End = orientIni.transposed()*orientEnd;
+
+	Quaternion q1;//quaternion initial
+	Quaternion q2, q_inter;//quaternion final
+	
+	orientIni.getQuaternion(q1);
+	orientEnd.getQuaternion(q2);
+	
+	q1 = q1.conjugated();
+	Quaternion q = q1 * q2;
+	double t=0.00, theta = q.angle/2.00;
+	double r=0.00,p=0.00,y=0.00;
 	
 //	for (int i=0,j=0;i<div_pos,j<div_orient;i++,j++)
 	for (int i=0;i<div_pos;i++)
@@ -541,13 +553,16 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 		posIni.y+=direct_vec.y;
 		posIni.z+=direct_vec.z;
 
-		////orientation
-		//orientIni.x+=variation_angles.x;
-		//orientIni.y+=variation_angles.y;
-		//orientIni.z+=variation_angles.z;
+		//orientation
+		t = i/div_pos;//t -> [0,1]
 
-		Transformation3D td3_final(posIni.x, posIni.y, posIni.z);
-		//						   orientIni.x, orientIni.y, orientIni.z);
+		//SLERP(q1,q2,u) = (q1*sin((1-u)*theta)+q2*sin(u*theta))/sin(theta)
+		q_inter = q1*(sin((1-t)*theta)/sin(theta)) + q2*(sin(t*theta)/sin(theta));
+
+		OrientationMatrix m= q_inter.getOrientationMatrix();
+		m.getRPY(r,p,y);
+
+		Transformation3D td3_final(posIni.x, posIni.y, posIni.z, r, p, y);
 		all_space_points.push_back(td3_final);
 
 	}// we already have all the intermediate positions and orientations (X,Y,Z,ROLL,PITCH,YAW)
@@ -560,39 +575,35 @@ void RobotSim::computeOrientation (Transformation3D td3d, vector<vector<double>>
 
 	OrientationMatrix orientIni = td3d.orientation;//get final orientation
 	OrientationMatrix orientEnd = getTcpLocation().orientation;//get current orientation
+	
 	//compute matrix Init->Final
-	OrientationMatrix orientInit_End = orientIni.transposed()*orientEnd;
-
+	//OrientationMatrix orientInit_End = orientIni.transposed()*orientEnd;
+	//Quaternion q = orientInit_End.getQuaternion();//q = (cos(t/2), u*sin(t/2));
+	
 	/* 
 		Calculating axis/angle intermediate which connect the initial rotation matrix
 		whith the final one
 	*/
 
-	double theta; //angle
-	Vector3D u; //axis
-
-	orientInit_End.getAxisAngle(theta,u);
-
-	Quaternion q1,q_inv;//quaternion initial
-	Quaternion q2;//quaternion final
+	Quaternion q1;//quaternion initial
+	Quaternion q2, q_inter;//quaternion final
 	
 	orientIni.getQuaternion(q1);
 	orientEnd.getQuaternion(q2);
-
+	
+	q1 = q1.conjugated();
+	Quaternion q = q1 * q2;
+	double u, theta = q.angle;
 
 	/*
 		Now select the interpolator method to calculate intermediate orientations.
 		All the interpolators will use cuaternions to calculate intermadiate orientations.
 	*/
 	
-	//SLERP = q1*(q1^-1*q2)^t
+	//SLERP(q1,q2,u) = (q1*sin((1-u)*theta)+q2*sin(u*theta))/sin(theta)
 	if (interpolator_orientation == SLERP)
 	{
-		q_inv = q1.inverse();
-		q2=q_inv*q2;
-		q2=
-
-
+		q_inter = (q1*sin((1-u)*theta)+q2*sin(u*theta))/sin(theta);
 
 	}	
 }
