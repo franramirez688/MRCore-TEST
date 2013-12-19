@@ -201,12 +201,14 @@ public:
 
 protected:
 	
-//Methods to linear path movement
+//Methods to linear path movement (position and orientation)
 	bool computeLinearPath (Transformation3D td3d);
 	bool computeLinearPathAbs (Transformation3D td3d);
-	void computeOrientation (Transformation3D td3d, vector<vector<double>> &_orient);
 	void updateTargetAndTagetTime(int index);
-	void computeViaPoint();
+	Quaternion computeOrientationSLERP(Quaternion qa, Quaternion qb, double t);
+
+//via point between two targets
+	void computeViaPoint(Vector3D pos_ini,Vector3D pos_inter,Vector3D pos_end);
 
 //redundant information to easily access the kinematic chain and joint controllers
 	vector<SolidEntity *> links;

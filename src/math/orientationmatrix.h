@@ -191,7 +191,7 @@ public:
 	Quaternion inverse(){
 		double div = square(norm());
 		if (div<EPS)return (*this);
-		return Quaternion(scal/div, conjugated().axis/div);
+		return Quaternion(scal/div, conjugated().vec/div);
 	}
 
 	double norm(){

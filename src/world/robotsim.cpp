@@ -502,7 +502,6 @@ void RobotSim::computeTargetTimeTVP()
 */
 bool RobotSim::computeLinearPath (Transformation3D td3d)
 {	
-
 	/*
 		Calculating the vector of intermediate positions
 	*/
@@ -525,9 +524,8 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 	if (div_pos == 0)div_pos=1;
 	direct_vec=direct_vec/div_pos;
 
-
 	/*
-		Calculating the vector of intermediate orientations
+		Calculating the intermediate orientations
 	*/
 	OrientationMatrix orientIni = td3d.orientation;//get final orientation
 	OrientationMatrix orientEnd = getTcpLocation().orientation;//get current orientation
@@ -535,77 +533,86 @@ bool RobotSim::computeLinearPath (Transformation3D td3d)
 	//OrientationMatrix orientInit_End = orientIni.transposed()*orientEnd;
 
 	Quaternion q1;//quaternion initial
-	Quaternion q2, q_inter;//quaternion final
+	Quaternion q2;//quaternion final and intermediate
+	Quaternion q_inter;//interpolated quaternion
 	
 	orientIni.getQuaternion(q1);
 	orientEnd.getQuaternion(q2);
-	
-	q1 = q1.conjugated();
-	Quaternion q = q1 * q2;
-	double t=0.00, theta = q.angle/2.00;
+
+	double t=0.00;
 	double r=0.00,p=0.00,y=0.00;
-	
-//	for (int i=0,j=0;i<div_pos,j<div_orient;i++,j++)
+
 	for (int i=0;i<div_pos;i++)
 	{
+		
 		//position
 		posIni.x+=direct_vec.x;
 		posIni.y+=direct_vec.y;
 		posIni.z+=direct_vec.z;
 
 		//orientation
-		t = i/div_pos;//t -> [0,1]
-
-		//SLERP(q1,q2,u) = (q1*sin((1-u)*theta)+q2*sin(u*theta))/sin(theta)
-		q_inter = q1*(sin((1-t)*theta)/sin(theta)) + q2*(sin(t*theta)/sin(theta));
-
-		OrientationMatrix m= q_inter.getOrientationMatrix();
+		t = i/(double)div_pos;//t -> [0.00,1.00]
+		q_inter = computeOrientationSLERP(q1,q2,t);
+		OrientationMatrix m = q_inter.getOrientationMatrix();
 		m.getRPY(r,p,y);
 
 		Transformation3D td3_final(posIni.x, posIni.y, posIni.z, r, p, y);
 		all_space_points.push_back(td3_final);
-
+		
 	}// we already have all the intermediate positions and orientations (X,Y,Z,ROLL,PITCH,YAW)
 	return true;
-
 }
 
-void RobotSim::computeOrientation (Transformation3D td3d, vector<vector<double>> &_orient)
-{
+ /*
+	Method to interpolate orientation in a robot movement.
+	It uses the SLERP method which calculates intermediate quaternions.
 
-	OrientationMatrix orientIni = td3d.orientation;//get final orientation
-	OrientationMatrix orientEnd = getTcpLocation().orientation;//get current orientation
+	SLERP(qa,qb,u) = qm = (qa*sin((1-t)*theta)+qb*sin(t*theta))/sin(theta)
+		qm = interpolated quaternion
+		qa = quaternion a (first quaternion to be interpolated between)
+		qb = quaternion b (second quaternion to be interpolated between)
+		t = a scalar between 0.0 (at qa) and 1.0 (at qb)
+		theta is half the angle between qa and qb
+ */
+
+Quaternion RobotSim::computeOrientationSLERP(Quaternion qa, Quaternion qb, double t)
+{
+	if (t>1.00)
+		t = 1.00;
+
+	Quaternion q, qm;
 	
 	//compute matrix Init->Final
 	//OrientationMatrix orientInit_End = orientIni.transposed()*orientEnd;
-	//Quaternion q = orientInit_End.getQuaternion();//q = (cos(t/2), u*sin(t/2));
+	//orientInit_End.getQuaternion(q);
 	
-	/* 
-		Calculating axis/angle intermediate which connect the initial rotation matrix
-		whith the final one
-	*/
+	qa = qa.inverse();
+	q = qa * qb;//q wich connects qa with qb -> q = qa^-1*qb
 
-	Quaternion q1;//quaternion initial
-	Quaternion q2, q_inter;//quaternion final
-	
-	orientIni.getQuaternion(q1);
-	orientEnd.getQuaternion(q2);
-	
-	q1 = q1.conjugated();
-	Quaternion q = q1 * q2;
-	double u, theta = q.angle;
+	// Calculate angle between them.
+	double cosHalfTheta = q.scal;
+	// if qa=qb or qa=-qb then theta = 0 and we can return qa
+	if (abs(cosHalfTheta) >= 1.0){
+		return qa;//qm = qa
+	}
 
-	/*
-		Now select the interpolator method to calculate intermediate orientations.
-		All the interpolators will use cuaternions to calculate intermadiate orientations.
-	*/
-	
-	//SLERP(q1,q2,u) = (q1*sin((1-u)*theta)+q2*sin(u*theta))/sin(theta)
-	if (interpolator_orientation == SLERP)
-	{
-		q_inter = (q1*sin((1-u)*theta)+q2*sin(u*theta))/sin(theta);
+	// Calculate temporary values.
+	double halfTheta = acos(cosHalfTheta);
+	double sinHalfTheta = sqrt(1.00 - cosHalfTheta*cosHalfTheta);
+	// if theta = 180 degrees then result is not fully defined
+	// we could rotate around any axis normal to qa or qb
+	if (fabs(sinHalfTheta) < EPS){ // fabs is floating point absolute
+		qm = qa*0.5 + qb*0.5;
+		return qm;
+	}
+	double ratioA = sin((1 - t) * halfTheta) / sinHalfTheta;
+	double ratioB = sin(t * halfTheta) / sinHalfTheta; 
+	//calculate Quaternion
+	qm = qa*ratioA + qb*ratioB;
 
-	}	
+	return qm;
+
+	//qm = qa*(sin((1-t)*theta)/sin(theta)) + qb*(sin(t*theta)/sin(theta));
 }
 
 
@@ -622,7 +629,7 @@ bool RobotSim::computeLinearPathAbs (Transformation3D td3d)
 /*
 	Method to calculate the via point in a trajectory with two different targets
 */
-void RobotSim::computeViaPoint()
+void RobotSim::computeViaPoint(Vector3D pos_ini,Vector3D pos_inter,Vector3D pos_end)
 {
 	/*
 		When robot have gone over the 90% of total distance 
@@ -631,6 +638,8 @@ void RobotSim::computeViaPoint()
 
 		Data: q_init, q_via_point, q_final, t1, t2 and tau
 	*/
+
+
 	//double tau = 0.1*targetTime;
 	//double val = 0.00;
 	//double p1 = 0.00;
