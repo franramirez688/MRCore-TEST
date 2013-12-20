@@ -191,66 +191,19 @@ void RobotSim::simulate(double delta_t)
 			}				
 		}
 
-		//else if(time >= (targetTime*0.85)) //if reach the 85% target time, we change to via point movement
-		//	if (path_type==LINEAR)
-		//	{
-		//		if ((index_pos+1) != (int)all_q_values.size())
-		//			computeViaPoint();
-
-		//	}
-		//	else if (next_q_target.size())
-		//	{
-		//		computeViaPoint();
-
-		//	}
 		else
 		{
-		//	if (via_point_flag)
-		//	//We activate via point
-		//	{
-		//		/* 
-		//			Via point ---> (A'-->C')
-		//				 
-		//				B
-		//				/\
-		//			   /  \
-		//			  A'---C'
-		//			 /      \
-		//			/        \
-		//		   /		  \
-		//		  A		       \				
-		//					    C
-		//
-		//		Math to calculate trajectory in via point
-		//		**********************************************************
-		//		* p(t) = A' + v1*Kab*t +t^2/(2*(Tc'-Ta'))*(v2*Kbc-v1*Kab)*
-		//		**********************************************************
-		//		
-		//		*/
 
-		//		double val=0.0;
-
-
-		//		all_space_points.clear();
-		//		all_q_values.clear();
-		//		
-		//		Vector3D direct_vec = posEnd - posIni; //direction vector
-		//		double total_path = direct_vec.module(); //distance L = total path
-		//		
-		//		if (total_path<EPS)
-		//			return;
-
-		//	}
-			/*************************************************************
+			/****************************************************************
 				IF INTERPOLATOR SELECTED IS CUBIC POLINOMIAL TRAJECTORY TYPE 
-			**************************************************************/
+			*****************************************************************/
 			if (interpolator_position==CPT)
 				for(int i=0;i<(int)actuators.size();i++){
 					actuators[i]->simulateInterpolatorPolinomial(time);}
 
-			/**************************************************************
+			/*****************************************************************
 				IF INTERPOLATOR SELECTED IS TRAPEZOIDAL VELOCITY PROFILE TYPE 
-			 **************************************************************/
+			 *****************************************************************/
 			else if (interpolator_position==TVP)
 				for (int i=0;i<(int)actuators.size();i++)
 					actuators[i]->simulateInterpolatorTVP(time);
@@ -629,36 +582,44 @@ bool RobotSim::computeLinearPathAbs (Transformation3D td3d)
 /*
 	Method to calculate the via point in a trajectory with two different targets
 */
-void RobotSim::computeViaPoint(Vector3D pos_ini,Vector3D pos_inter,Vector3D pos_end)
+void RobotSim::computeViaPoint(Vector3D pos_a,Vector3D pos_b,Vector3D pos_c)
 {
 	/*
 		When robot have gone over the 90% of total distance 
 		if there is a new target to go, it'll start to change 
 		its direction to the other target --> Via Point
 
-		Data: q_init, q_via_point, q_final, t1, t2 and tau
-	*/
+		Via point ---> (A'-->C')
+				 
+				B
+				/\
+			   /  \
+			  A'---C'
+			 /      \
+			/        \
+		   /		  \
+		  A		       \				
+						C
+
+		Math to calculate trajectory in via point
+		**********************************************************
+		* p(t) = A' + v1*Kab*t +t^2/(2*(Tc'-Ta'))*(v2*Kbc-v1*Kab)*
+		**********************************************************
+		
+		*/
 
 
-	//double tau = 0.1*targetTime;
-	//double val = 0.00;
-	//double p1 = 0.00;
+		Vector3D Kab = pos_b - pos_a; //direction vector
+		Vector3D Kbc = pos_c - pos_b; //direction vector
 
-	////change the other target
-	//if (interpolator_position==TVP)
-	//	for (int i=0;i<(int)actuators.size();i++)
-	//	{
-	//		//if (tInit<=time && time<=(t1-tau))
-	//		//	val = p1 - ((t1 - time)/t1)*L1;
+		//15% of lenght
+		double d1 = 0.15*Kab.module();
+		double d2 = 0.15*Kbc.module();
+		double veloc_max = 0.00, acel_max = 0.00;
 
-	//		if ((t1-tau)<time && time<=(t1+tau))
-	//			val = p1 - (square(time - t1 - tau)/(4*tau*t1))*L1 + (square(time - t1 + tau)/(4*tau*t2))*L2;
+		//we supposed v1 = v2 = vmax
+		double delta_time = (veloc_max/acel_max)*((Kbc-Kab).module());
 
-	//		//else if ((t1+tau)<time && time<=(t1+t2))
-	//		//	val = p1 + ((time - t1)/t2)*L2;
-
-	//	}
-	//return val;
 }
 
 
@@ -666,13 +627,6 @@ void RobotSim::computeViaPoint(Vector3D pos_ini,Vector3D pos_inter,Vector3D pos_
 	Different methods to move the joints or robot
 ****************************************************/
 
-bool RobotSim::moveTo(double *_q)
-{
-	int num=(int)joints.size();
-	vector<double> q;
-	for(int i=0;i<num;i++)q.push_back(_q[i]);
-	return moveTo(q);
-}
 
 bool  RobotSim::moveTo(Transformation3D t3d, unsigned char conf)
 {
@@ -703,6 +657,14 @@ bool  RobotSim::moveToAbs(Transformation3D t3d, unsigned char conf)
 	return moveTo(t_p,conf);
 }
 
+bool RobotSim::moveTo(double *_q)
+{
+	int num=(int)joints.size();
+	vector<double> q;
+	for(int i=0;i<num;i++)q.push_back(_q[i]);
+	return moveTo(q);
+}
+
 bool RobotSim::moveTo(const vector<double> & _q)
 {
 
@@ -714,7 +676,7 @@ bool RobotSim::moveTo(const vector<double> & _q)
 }
 
 /*
-	Go to absolute and relative coordinates
+	Copmpute absolute and relative coordinates
 */
 
 bool RobotSim::computeTrajectoryToAbs(Transformation3D t)

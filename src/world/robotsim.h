@@ -237,6 +237,7 @@ protected:
 
 //detect vía points
 	bool via_point_flag;//changing target between trajectory segments
+	Vector3D viapoint_end, viapoint_begin;
 
 };
 
