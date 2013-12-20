@@ -453,6 +453,17 @@ void RobotSim::computeTargetTimeTVP()
 /*
 	Method to calculate the linear path for any space point
 */
+
+bool RobotSim::computeLinearPathAbs (Transformation3D td3d)
+{	
+	Transformation3D t_base=links[0]->getAbsoluteT3D();
+	Transformation3D aux=t_base.inverted();
+	Transformation3D t_p=(aux)*(td3d);
+
+	return computeLinearPath(t_p);
+} 
+
+
 bool RobotSim::computeLinearPath (Transformation3D td3d)
 {	
 	/*
@@ -569,57 +580,106 @@ Quaternion RobotSim::computeOrientationSLERP(Quaternion qa, Quaternion qb, doubl
 }
 
 
-bool RobotSim::computeLinearPathAbs (Transformation3D td3d)
-{	
-	Transformation3D t_base=links[0]->getAbsoluteT3D();
-	Transformation3D aux=t_base.inverted();
-	Transformation3D t_p=(aux)*(td3d);
-
-	return computeLinearPath(t_p);
-}
-
 
 /*
 	Method to calculate the via point in a trajectory with two different targets
 */
-void RobotSim::computeViaPoint(Vector3D pos_a,Vector3D pos_b,Vector3D pos_c)
+bool RobotSim::computeViaPoint(Transformation3D td3_a_prim,Transformation3D td3_b,Transformation3D td3_c_prim)
 {
 	/*
-		When robot have gone over the 90% of total distance 
-		if there is a new target to go, it'll start to change 
-		its direction to the other target --> Via Point
+	When robot have gone over the 90% of total distance 
+	if there is a new target to go, it'll start to change 
+	its direction to the other target --> Via Point
 
-		Via point ---> (A'-->C')
-				 
-				B
-				/\
-			   /  \
-			  A'---C'
-			 /      \
-			/        \
-		   /		  \
-		  A		       \				
-						C
+	Via point ---> (A'-->C')
+			 
+			B
+			/\
+		   /  \
+		  A'---C'
+		 /      \
+		/        \
+	   /		  \
+	  A		       \				
+					C
 
-		Math to calculate trajectory in via point
-		**********************************************************
-		* p(t) = A' + v1*Kab*t +t^2/(2*(Tc'-Ta'))*(v2*Kbc-v1*Kab)*
-		**********************************************************
+	Math to calculate trajectory in via point
+	**********************************************************
+	* p(t) = A' + v1*Kab*t +t^2/(2*(Tc'-Ta'))*(v2*Kbc-v1*Kab)*
+	**********************************************************
+	
+	*/
+
+	
+	/*
+		Calculating the vector of intermediate positions
+	*/
+
+	Vector3D pos_a_prim(td3_a_prim.position);
+	Vector3D pos_b(td3_b.position);
+	Vector3D pos_c_prim(td3_c_prim.position);
+
+	//all_space_points.clear();
+	//all_q_values.clear();
+
+	//direction vectors
+	Vector3D Kab = pos_b - pos_a_prim; 
+	Vector3D Kbc = pos_c_prim - pos_b;
+	Vector3D pos;
+
+	//unit vectors
+	Kab = Kab.normalize();
+	Kbc = Kbc.normalize();
+
+	//lenght
+	double d1 = Kab.module();
+	double d2 = Kbc.module();
+
+	if (d1<=EPS || d2<=EPS)
+		return false;
+
+	double veloc_max=5.00, acel_max = 1.00;//rad/s and rad/s^2
+
+	//we supposed v1 = v2 = vmax
+	double delta_time = (veloc_max/acel_max)*((Kbc-Kab).module());
+
+	double divisions = delta_time * controlFrequency;
+	int div_pos = (int)divisions;
+	if (div_pos == 0)div_pos=1;
+
+	/*
+		Calculating the intermediate orientations
+	*/
+	OrientationMatrix orientIni = td3_a_prim.orientation;//get final orientation
+	OrientationMatrix orientEnd = td3_c_prim.orientation;//get current orientation
+
+	Quaternion q1;//quaternion initial
+	Quaternion q2;//quaternion final and intermediate
+	Quaternion q_inter;//interpolated quaternion
+	
+	orientIni.getQuaternion(q1);
+	orientEnd.getQuaternion(q2);
+
+	double t=0.00;
+	double r=0.00,p=0.00,y=0.00;
+
+	for (int i=0;i<div_pos;i++)
+	{
+		t = i/(double)div_pos;//t -> [0.00,1.00]	
+
+		//position
+		pos = pos_a_prim + Kab*(veloc_max*t) + (Kbc*veloc_max-Kab*veloc_max)*(((t*t)/delta_time)*0.5);
+
+		//orientation
+		q_inter = computeOrientationSLERP(q1,q2,t);
+		OrientationMatrix m = q_inter.getOrientationMatrix();
+		m.getRPY(r,p,y);
+
+		Transformation3D td3_final(pos.x, pos.y, pos.z, r, p, y);
+		all_space_via_points.push_back(td3_final);
 		
-		*/
-
-
-		Vector3D Kab = pos_b - pos_a; //direction vector
-		Vector3D Kbc = pos_c - pos_b; //direction vector
-
-		//15% of lenght
-		double d1 = 0.15*Kab.module();
-		double d2 = 0.15*Kbc.module();
-		double veloc_max = 0.00, acel_max = 0.00;
-
-		//we supposed v1 = v2 = vmax
-		double delta_time = (veloc_max/acel_max)*((Kbc-Kab).module());
-
+	}// we already have all the intermediate positions and orientations (X,Y,Z,ROLL,PITCH,YAW)
+	return true;
 }
 
 

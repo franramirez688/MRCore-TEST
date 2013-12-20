@@ -208,7 +208,7 @@ protected:
 	Quaternion computeOrientationSLERP(Quaternion qa, Quaternion qb, double t);
 
 //via point between two targets
-	void computeViaPoint(Vector3D pos_ini,Vector3D pos_inter,Vector3D pos_end);
+	bool computeViaPoint(Transformation3D td3_a,Transformation3D td3_b,Transformation3D td3_c);
 
 //redundant information to easily access the kinematic chain and joint controllers
 	vector<SolidEntity *> links;
@@ -237,7 +237,7 @@ protected:
 
 //detect vía points
 	bool via_point_flag;//changing target between trajectory segments
-	Vector3D viapoint_end, viapoint_begin;
+	vector<Transformation3D> all_space_via_points;
 
 };
 
